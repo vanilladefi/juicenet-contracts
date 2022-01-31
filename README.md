@@ -33,6 +33,7 @@ pnpm run coverage:sol
 Set the `ALCHEMY_POLYGON_APIKEY` in `.secrets.env` (use `.secrets.env.example` as a template) and execute:
 
 ```shell
+mkdir deployments/polygon
 pnpm run node:mainnet-fork
 ```
 
