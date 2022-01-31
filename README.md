@@ -15,9 +15,9 @@ npm install -g pnpm
 
 We use [Hardhat](https://hardhat.org/) as a build tool.
 
-To build, generate Typechain bindings, and run model tests:
+To build, generate Typechain bindings, and run unit tests:
 ```
-pnpm install
+pnpm install ## will warn about missing artifacts, which will created in the next step :)
 pnpm run compile:sol
 pnpm run generate:typechain
 pnpm test
@@ -30,7 +30,7 @@ pnpm run coverage:sol
 
 ## Deploy contracts to a local mainnet fork
 
-Set the `ALCHEMY_POLYGON_APIKEY` in `.secrets.env` and execute:
+Set the `ALCHEMY_POLYGON_APIKEY` in `.secrets.env` (use `.secrets.env.example` as a template) and execute:
 
 ```shell
 pnpm run node:mainnet-fork
