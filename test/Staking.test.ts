@@ -194,13 +194,13 @@ describe("Staking", () => {
     })
 
     it("fails when withdrawing non-deposited JUICE", async () => {
-      const withdrawAmount = 150
+      const withdrawAmount = INIT_JUICE_SUPPLY / 10
       await expect(stakingContract.connect(noDeposit).withdraw(withdrawAmount)).to.revertedWith(`InsufficientJUICE(${withdrawAmount}, 0)`)
     })
 
     it("fails when paused", async () => {
       await stakingContract.connect(deployer).emergencyPause(true)
-      await expect(stakingContract.withdraw(100)).to.revertedWith("Pausable: paused")
+      await expect(stakingContract.withdraw(INIT_JUICE_SUPPLY / 10)).to.revertedWith("Pausable: paused")
     })
   })
 
@@ -247,7 +247,7 @@ describe("Staking", () => {
           let oraclePrice = 10 * (10 ** 8)
           let juiceAmount = firstStake as number
           // overstaking is limited to total unstaked balance
-          const maxJuiceAmountSpent = 1000000
+          const maxJuiceAmountSpent = INIT_JUICE_SUPPLY / 2
           let expectedJuiceAmountSpent = Math.min(juiceAmount, maxJuiceAmountSpent)
 
           // this isn't very readable but just want to verify that for same set of params, both the normal and delegated versions end up in the same state
@@ -296,8 +296,8 @@ describe("Staking", () => {
 
     describe("Given single long and short position", () => {
       let stake1: StakeHelper, stake2: StakeHelper
-      const initLongStakeAmount = 600000
-      const initShortStakeAmount = 400000
+      const initLongStakeAmount = INIT_JUICE_SUPPLY / 20 * 6
+      const initShortStakeAmount = INIT_JUICE_SUPPLY / 20 * 4
       beforeEach(async () => {
         await stakingContract.connect(user).modifyStakes([stake.long(initLongStakeAmount), Stakes(token2).short(initShortStakeAmount)])
         stake1 = Stakes(token1)
@@ -399,7 +399,7 @@ describe("Staking", () => {
           await tx
 
           expect(await currentStake(user.address, token1)).to.include({ juiceValue: 0, juiceStake: 0 })
-          expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(initLongStakeAmount + juiceAmountChange) // 500k back + 250k extra
+          expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(initLongStakeAmount + juiceAmountChange)
           expect(await stakingContract.balanceOf(stakingContract.address)).to.equal(initLongStakeAmount + juiceAmountChange + initShortStakeAmount)
           expect(await stakingContract.totalSupply()).to.equal(INIT_JUICE_SUPPLY + juiceAmountChange)
           await expect(tx).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token1, true, newPrice1, initLongStakeAmount + juiceAmountChange)
@@ -413,7 +413,7 @@ describe("Staking", () => {
           await tx
 
           expect(await currentStake(user.address, token2)).to.include({ juiceValue: 0, juiceStake: 0 })
-          expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(initShortStakeAmount + juiceAmountChange) // 500k - 250k loss
+          expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(initShortStakeAmount + juiceAmountChange)
           expect(await stakingContract.balanceOf(stakingContract.address)).to.equal(initLongStakeAmount + initShortStakeAmount + juiceAmountChange)
           expect(await stakingContract.totalSupply()).to.equal(INIT_JUICE_SUPPLY + juiceAmountChange)
           await expect(tx).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token2, false, newPrice2, -juiceAmountChange)
@@ -436,7 +436,7 @@ describe("Staking", () => {
           await tx
 
           expect(await currentStake(user.address, token1)).to.include({ juiceValue: 0, juiceStake: 0 })
-          expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(initLongStakeAmount + juiceAmountChange) // 500k back - 250k loss
+          expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(initLongStakeAmount + juiceAmountChange)
           expect(await stakingContract.balanceOf(stakingContract.address)).to.equal(initLongStakeAmount + initShortStakeAmount + juiceAmountChange)
           expect(await stakingContract.totalSupply()).to.equal(INIT_JUICE_SUPPLY + juiceAmountChange)
           await expect(tx).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token1, true, newPrice1, -juiceAmountChange)
@@ -450,7 +450,7 @@ describe("Staking", () => {
           await tx
 
           expect(await currentStake(user.address, token2)).to.include({ juiceValue: 0, juiceStake: 0 })
-          expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(initShortStakeAmount + juiceAmountChange) // 500k + 250k extra
+          expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(initShortStakeAmount + juiceAmountChange)
           expect(await stakingContract.balanceOf(stakingContract.address)).to.equal(initLongStakeAmount + initShortStakeAmount + juiceAmountChange)
           expect(await stakingContract.totalSupply()).to.equal(INIT_JUICE_SUPPLY + juiceAmountChange)
           await expect(tx).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token2, false, newPrice2, initShortStakeAmount + juiceAmountChange)
@@ -472,7 +472,7 @@ describe("Staking", () => {
           await tx
 
           expect(await currentStake(user.address, token1)).to.include({ juiceValue: 0, juiceStake: 0 })
-          expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(0) // 500k back - 500k loss
+          expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(0)
           expect(await stakingContract.balanceOf(stakingContract.address)).to.equal(initShortStakeAmount)
           expect(await stakingContract.totalSupply()).to.equal(INIT_JUICE_SUPPLY - initLongStakeAmount)
           await expect(tx).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token1, true, newPrice1, 0)
@@ -485,7 +485,7 @@ describe("Staking", () => {
           await tx
 
           expect(await currentStake(user.address, token2)).to.include({ juiceValue: 0, juiceStake: 0 })
-          expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(initShortStakeAmount * 2) // 500k + 500k extra
+          expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(initShortStakeAmount * 2)
           expect(await stakingContract.balanceOf(stakingContract.address)).to.equal(initShortStakeAmount * 2 + initLongStakeAmount)
           expect(await stakingContract.totalSupply()).to.equal(INIT_JUICE_SUPPLY + initShortStakeAmount)
           await expect(tx).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token2, false, newPrice2, initShortStakeAmount * 2)
@@ -507,7 +507,7 @@ describe("Staking", () => {
           await tx
 
           expect(await currentStake(user.address, token1)).to.include({ juiceValue: 0, juiceStake: 0 })
-          expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(initLongStakeAmount * 3) // 500k back + 1000k extra
+          expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(initLongStakeAmount * 3)
           expect(await stakingContract.balanceOf(stakingContract.address)).to.equal(initLongStakeAmount * 3 + initShortStakeAmount)
           expect(await stakingContract.totalSupply()).to.equal(INIT_JUICE_SUPPLY + initLongStakeAmount * 2)
           await expect(tx).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token1, true, newPrice1, initLongStakeAmount * 3)
@@ -520,7 +520,7 @@ describe("Staking", () => {
           await tx
 
           expect(await currentStake(user.address, token2)).to.include({ juiceValue: 0, juiceStake: 0 })
-          expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(0) // 500k back - 500k loss
+          expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(0)
           expect(await stakingContract.balanceOf(stakingContract.address)).to.equal(initLongStakeAmount)
           expect(await stakingContract.totalSupply()).to.equal(INIT_JUICE_SUPPLY - initShortStakeAmount)
           await expect(tx).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token2, false, newPrice2, 0)
