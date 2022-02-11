@@ -429,19 +429,62 @@ function emergencyPause(bool pauseStaking) external;
 
 ## Staker Delegate Operations
 
-The Staker Delegate operations are defined in `interfaces/IJuiceStakerDelegateActions.sol`.
+The Staker Delegate operations are defined in `interfaces/IJuiceStakerDelegateActions.sol`. They are:
 
-TODO describe and define:
-- EIPs we use
-- function signatures
-- EIP-712 data structures
-- additional pre-conditions vs normal Staker operations
+```solidity
+struct Permission {
+    address sender;
+    uint deadline;
+    uint nonce;
+}
 
-### `delegateDeposit`
+struct SignedPermission {
+    Permission data;
+    bytes signature;
+}
 
-### `delegateWithdraw`
+/// @notice Deposits JUICE tokens to be used in staking on behalf of permitter
+/// @param amount The deposited amount. If it exceeds permitter's balance, tx reverts with `InsufficientJUICE` error.
+/// @param permission The EIP-712 v4 signed permission object for the deposit operation.
+function delegateDeposit(uint amount, SignedPermission calldata permission) external;
 
-### `delegateModifyStakes`
+/// @notice Modifies the permitter's token stakes.
+/// @param stakes The array of StakingParams which are processed in order.
+/// @param permission The EIP-712 v4 signed permission object for the modifyStakes operation.
+function delegateModifyStakes(StakingParam[] calldata stakes, SignedPermission calldata permission) external;
+
+/// @notice Withdraws JUICE tokens from the staking contract. Moves `amount` of JUICE from the contract's balance to
+/// permitter's balance.
+/// @param amount The withdrawn amount. If it exceeds permitter's unstaked balance, tx reverts with `InsufficientJUICE` error.
+/// @param permission The EIP-712 v4 signed permission object for the withdraw operation.
+function delegateWithdraw(uint amount, SignedPermission calldata permission) external;
+```
+
+### EIP-712 Data Structures
+
+Structures with the EIP-712 specific hashing functions for computing `EIP712TypedHash` for each operation are defined in `JuiceStakerDelegateEIP712Util.sol`:
+
+```solidity
+Permission(address sender,uint deadline,uint nonce)
+Deposit(uint amount,Permission permission)
+Withdraw(uint amount,Permission permission)
+Stake(address token,uint128 amount,bool sentiment)
+ModifyStakes(Stake[] stakes,Permission permission)
+```
+
+### Checks
+
+Calling any `delegateDeposit`, `delegateWithdraw` and `delegateModifyStakes` perform following checks before continuing to execute the respective staker operation:
+- `permission.data.deadline` must be less than `block.timestamp`, otherwise reverts with error `PermissionExpired`
+- `permission.data.nonce` must be equal to `permissionNonces[permission.data.sender]`, otherwise reverts with error `InvalidNonce`
+- `permission.data.sender` must not be `address(0)`, otherwise reverts with error `InvalidSender`
+- `SignatureChecker.isValidSignatureNow(permission.data.sender, EIP712TypedHash, permission.signature)` must be true, otherwise reverts with error `InvalidSignature`
+
+### Effects
+
+Calling `delegateDeposit`, `delegateWithdraw` and `delegateModifyStakes` will change the contract state equally to `deposit`, `withdraw` and `modifyStakes` respectively, with following additions:
+
+- `permissionNonces[permission.data.sender]` is incremented by one
 
 ## External contract dependencies
 

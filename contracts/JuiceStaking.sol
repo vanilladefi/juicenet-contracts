@@ -4,21 +4,30 @@ pragma solidity ^0.8.10;
 
 import "./interfaces/IJuiceStaking.sol";
 import "./JuiceStakerDelegateEIP712Util.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import { SignatureCheckerUpgradeable as SignatureChecker } from "@openzeppelin/contracts-upgradeable/utils/cryptography/SignatureCheckerUpgradeable.sol";
+import { ECDSAUpgradeable as ECDSA } from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
+import { EnumerableSetUpgradeable as EnumerableSet } from "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 import "./interfaces/IPriceOracle.sol";
 import { StakingParam } from "./interfaces/IJuiceStakerActions.sol";
 
-contract JuiceStaking is IJuiceStaking, ERC20, Ownable, Pausable, JuiceStakerDelegateEIP712Util {
+contract JuiceStaking is
+    IJuiceStaking,
+    ERC20Upgradeable,
+    UUPSUpgradeable,
+    OwnableUpgradeable,
+    PausableUpgradeable,
+    JuiceStakerDelegateEIP712Util
+{
     // decimals synced with Chainlink pricefeed decimals
-    uint8 constant private DECIMALS = 8;
+    uint8 private constant DECIMALS = 8;
 
+    /// used in StakePosition.amount calculations to retain good enough precision in intermediate price math
+    uint256 private constant INTERNAL_TOKEN_AMOUNT_MULTIPLIER = 1e16;
     struct StakePosition {
         /// The amount of tokens at stake.
         uint128 amount;
@@ -28,7 +37,7 @@ contract JuiceStaking is IJuiceStaking, ERC20, Ownable, Pausable, JuiceStakerDel
 
     struct Stake {
         uint128 unstakedBalance;
-        mapping (address => StakePosition) tokenStake;
+        mapping(address => StakePosition) tokenStake;
     }
 
     struct TokenSignal {
@@ -36,10 +45,8 @@ contract JuiceStaking is IJuiceStaking, ERC20, Ownable, Pausable, JuiceStakerDel
         uint128 totalShorts;
     }
 
-    mapping(address => Stake) private stakes;
-    mapping(address => TokenSignal) private tokenSignals;
-
-
+    mapping(address => Stake) internal stakes;
+    mapping(address => TokenSignal) internal tokenSignals;
 
     struct AggregateSignal {
         uint128 totalVolume;
@@ -49,34 +56,47 @@ contract JuiceStaking is IJuiceStaking, ERC20, Ownable, Pausable, JuiceStakerDel
         /// the sum of weighted net sentiments (i.e. the total sum of longTokenSignals.longTokenWeight)
         uint128 sumWeightedNetSentiment;
     }
-    AggregateSignal private aggregatedSignal;
 
-    AggregateTokenSignal private aggregateTokenSignal;
+    AggregateSignal internal aggregatedSignal;
 
-    mapping(address => IPriceOracle) private priceOracles;
+    AggregateTokenSignal internal aggregateTokenSignal;
+
+    mapping(address => IPriceOracle) internal priceOracles;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    EnumerableSet.AddressSet private registeredTokens;
+    EnumerableSet.AddressSet internal registeredTokens;
 
     IJuiceSignalAggregator public signalAggregator;
 
     bytes32 public domainSeparatorV4;
 
-    constructor() ERC20("Vanilla Juice", "JUICE") {
-        domainSeparatorV4 = hashDomainSeparator("Vanilla Juice", "1", block.chainid, address(this));
+    function initialize() public initializer {
+        __ERC20_init("Vanilla Juice", "JUICE");
+        __UUPSUpgradeable_init();
+        __Ownable_init();
+        __Pausable_init();
+        domainSeparatorV4 = hashDomainSeparator(
+            "Vanilla Juice",
+            "1",
+            block.chainid,
+            address(this)
+        );
     }
 
-    /// @inheritdoc ERC20
+    /// @inheritdoc ERC20Upgradeable
     function decimals() public pure override returns (uint8) {
         return DECIMALS;
     }
 
     /// @inheritdoc IJuiceOwnerActions
-    function updatePriceOracles(address[] calldata tokens, IPriceOracle[] calldata oracles) external override onlyOwner {
+    function updatePriceOracles(
+        address[] calldata tokens,
+        IPriceOracle[] calldata oracles
+    ) external override onlyOwner {
         if (tokens.length != oracles.length) {
             revert TokenOracleMismatch(tokens.length, oracles.length);
         }
-        for (uint i = 0; i < oracles.length; i++) {
+        for (uint256 i = 0; i < oracles.length; i++) {
             if (address(oracles[i]) == address(0)) {
                 delete priceOracles[tokens[i]];
                 registeredTokens.remove(tokens[i]);
@@ -92,20 +112,25 @@ contract JuiceStaking is IJuiceStaking, ERC20, Ownable, Pausable, JuiceStakerDel
     }
 
     /// @inheritdoc IJuiceOwnerActions
-    function mintJuice(address[] calldata targets, uint[] calldata amounts) external onlyOwner {
-        if(targets.length != amounts.length) {
+    function mintJuice(address[] calldata targets, uint256[] calldata amounts)
+        external
+        onlyOwner
+    {
+        if (targets.length != amounts.length) {
             revert MintTargetMismatch(targets.length, amounts.length);
         }
 
-        for (uint i = 0; i < targets.length; i++) {
+        for (uint256 i = 0; i < targets.length; i++) {
             address target = targets[i];
             _mint(target, amounts[i]);
         }
-
     }
 
     /// @inheritdoc IJuiceOwnerActions
-    function authorizeSignalAggregator(IJuiceSignalAggregator aggregator) external onlyOwner {
+    function authorizeSignalAggregator(IJuiceSignalAggregator aggregator)
+        external
+        onlyOwner
+    {
         signalAggregator = aggregator;
         if (address(aggregator) != address(0)) {
             aggregator.signalUpdated(aggregateTokenSignal);
@@ -113,23 +138,72 @@ contract JuiceStaking is IJuiceStaking, ERC20, Ownable, Pausable, JuiceStakerDel
     }
 
     /// @inheritdoc IJuiceStaking
-    function unstakedBalanceOf(address user) external view returns (uint) {
+    function unstakedBalanceOf(address user) external view returns (uint256) {
         return stakes[user].unstakedBalance;
     }
 
+    function latestPrice(address token)
+        internal
+        view
+        returns (uint256 price, bool priceFound)
+    {
+        IPriceOracle priceOracle = priceOracles[token];
+        if (address(priceOracle) == address(0)) {
+            return (0, false);
+        }
+        return (uint256(priceOracle.latestAnswer()), true);
+    }
+
     /// @inheritdoc IJuiceStaking
-    function currentStake(address user, address token) external view returns (uint128 amount, bool sentiment) {
+    function currentStake(address user, address token)
+        external
+        view
+        returns (
+            uint256 juiceStake,
+            uint256 juiceValue,
+            uint256 currentPrice,
+            bool sentiment
+        )
+    {
         StakePosition memory stake = stakes[user].tokenStake[token];
-        return (stake.amount, stake.juiceBalance < 0);
+        bool oracleFound;
+        // if stake position was opened before price oracle was removed, their value will equal the original stake
+        // oracleFound is therefore checked before calculating the juiceValue for both long and short positions
+        (currentPrice, oracleFound) = latestPrice(token);
+
+        if (stake.amount == 0) {
+            // no stake for the token, return early
+            return (0, 0, currentPrice, false);
+        }
+        sentiment = stake.juiceBalance < 0;
+        if (sentiment) {
+            juiceStake = uint256(int256(-stake.juiceBalance));
+            juiceValue = oracleFound
+                ? computeJuiceValue(stake.amount, currentPrice)
+                : juiceStake;
+        } else {
+            juiceStake = uint256(int256(stake.juiceBalance));
+            if (oracleFound) {
+                int256 shortPositionValue = (2 * stake.juiceBalance) -
+                    int256(computeJuiceValue(stake.amount, currentPrice));
+                if (shortPositionValue > 0) {
+                    juiceValue = uint256(shortPositionValue);
+                } else {
+                    juiceValue = 0;
+                }
+            } else {
+                juiceValue = juiceStake;
+            }
+        }
     }
 
     /// @inheritdoc IJuiceStakerActions
-    function deposit(uint amount) external override whenNotPaused {
+    function deposit(uint256 amount) external override whenNotPaused {
         doDeposit(amount, msg.sender);
     }
 
-    function doDeposit(uint amount, address depositor) internal {
-        uint currentBalance = balanceOf(depositor);
+    function doDeposit(uint256 amount, address depositor) internal {
+        uint256 currentBalance = balanceOf(depositor);
         if (currentBalance < amount) {
             revert InsufficientJUICE(amount, currentBalance);
         }
@@ -141,11 +215,11 @@ contract JuiceStaking is IJuiceStaking, ERC20, Ownable, Pausable, JuiceStakerDel
     }
 
     /// @inheritdoc IJuiceStakerActions
-    function withdraw(uint amount) external override whenNotPaused {
+    function withdraw(uint256 amount) external override whenNotPaused {
         doWithdraw(amount, msg.sender);
     }
 
-    function doWithdraw(uint amount, address staker) internal {
+    function doWithdraw(uint256 amount, address staker) internal {
         Stake storage stake = stakes[staker];
         if (stake.unstakedBalance < amount) {
             revert InsufficientJUICE(amount, stake.unstakedBalance);
@@ -156,101 +230,140 @@ contract JuiceStaking is IJuiceStaking, ERC20, Ownable, Pausable, JuiceStakerDel
     }
 
     /// @inheritdoc IJuiceStakerActions
-    function modifyStakes(StakingParam[] calldata stakingParams) external override whenNotPaused {
+    function modifyStakes(StakingParam[] calldata stakingParams)
+        external
+        override
+        whenNotPaused
+    {
         doModifyStakes(stakingParams, msg.sender);
     }
 
-    function normalizedAggregateSignal() external view returns (AggregateTokenSignal memory) {
+    function normalizedAggregateSignal()
+        external
+        view
+        returns (AggregateTokenSignal memory)
+    {
         return aggregateTokenSignal;
     }
 
-    function normalizeTokenSignals(address[] memory tokens, uint[] memory weights, uint length, AggregateSignal memory totals) internal {
+    function normalizeTokenSignals(
+        address[] memory tokens,
+        uint256[] memory weights,
+        uint256 length,
+        AggregateSignal memory totals
+    ) internal {
         LongTokenSignal[] memory longTokens = new LongTokenSignal[](length);
-        LongTokenSignal[] storage storedLongTokens = aggregateTokenSignal.longTokens;
-        for (uint i = 0; i < longTokens.length; i++ ) {
-
-            uint96 weight = uint96(totals.totalLongSentiment * weights[i] / totals.sumWeightedNetSentiment);
+        LongTokenSignal[] storage storedLongTokens = aggregateTokenSignal
+            .longTokens;
+        for (uint256 i = 0; i < longTokens.length; i++) {
+            uint96 weight = uint96(
+                (totals.totalLongSentiment * weights[i]) /
+                    totals.sumWeightedNetSentiment
+            );
 
             // do rounding
             if (weight % 100 > 50) {
-                weight += (100 - weight % 100);
-            }
-            else {
+                weight += (100 - (weight % 100));
+            } else {
                 weight -= (weight % 100);
             }
             if (storedLongTokens.length == i) {
-                storedLongTokens.push(LongTokenSignal({token: tokens[i], weight: weight/100}));
-            }
-            else {
-                storedLongTokens[i] = LongTokenSignal({token: tokens[i], weight: weight/100});
+                storedLongTokens.push(
+                    LongTokenSignal({ token: tokens[i], weight: weight / 100 })
+                );
+            } else {
+                storedLongTokens[i] = LongTokenSignal({
+                    token: tokens[i],
+                    weight: weight / 100
+                });
             }
         }
-        uint arrayItemsToRemove = storedLongTokens.length - length;
+        uint256 arrayItemsToRemove = storedLongTokens.length - length;
         while (arrayItemsToRemove > 0) {
             storedLongTokens.pop();
             arrayItemsToRemove--;
         }
     }
 
-    function doModifyStakes(StakingParam[] calldata stakingParams, address staker) internal {
+    function doModifyStakes(
+        StakingParam[] calldata stakingParams,
+        address staker
+    ) internal {
         Stake storage stake = stakes[staker];
-        int juiceSupplyDiff = 0;
-        int volumeDiff = 0;
-        int sentimentDiff = 0;
-        for (uint i = 0; i < stakingParams.length; i++) {
+        int256 juiceSupplyDiff = 0;
+        int256 volumeDiff = 0;
+        int256 sentimentDiff = 0;
+        for (uint256 i = 0; i < stakingParams.length; i++) {
             StakingParam calldata param = stakingParams[i];
             TokenSignal storage tokenSignal = tokenSignals[param.token];
-            (uint128 longsBefore, uint128 shortsBefore) = (tokenSignal.totalLongs, tokenSignal.totalShorts);
-            juiceSupplyDiff += removeStake(param.token, stake, tokenSignal, staker);
+            (uint128 longsBefore, uint128 shortsBefore) = (
+                tokenSignal.totalLongs,
+                tokenSignal.totalShorts
+            );
+            juiceSupplyDiff += removeStake(
+                param.token,
+                stake,
+                tokenSignal,
+                staker
+            );
             addStake(param, tokenSignal, staker);
-            volumeDiff += (int(uint(tokenSignal.totalLongs + tokenSignal.totalShorts)) - int(uint(longsBefore + shortsBefore)));
-            sentimentDiff += ((int(uint(tokenSignal.totalLongs)) - int(uint(longsBefore))) - (int(uint(tokenSignal.totalShorts)) - int(uint(shortsBefore))));
+            volumeDiff += (int256(
+                uint256(tokenSignal.totalLongs + tokenSignal.totalShorts)
+            ) - int256(uint256(longsBefore + shortsBefore)));
+            sentimentDiff += ((int256(uint256(tokenSignal.totalLongs)) -
+                int256(uint256(longsBefore))) -
+                (int256(uint256(tokenSignal.totalShorts)) -
+                    int256(uint256(shortsBefore))));
         }
         if (juiceSupplyDiff > 0) {
-            _mint(address(this), uint(juiceSupplyDiff));
-        }
-        else if (juiceSupplyDiff < 0) {
-            _burn(address(this), uint(-juiceSupplyDiff));
+            _mint(address(this), uint256(juiceSupplyDiff));
+        } else if (juiceSupplyDiff < 0) {
+            _burn(address(this), uint256(-juiceSupplyDiff));
         }
 
         doUpdateAggregateSignal(volumeDiff, sentimentDiff);
-
     }
 
-    function doUpdateAggregateSignal(int volumeDiff, int sentimentDiff) internal {
+    function doUpdateAggregateSignal(int256 volumeDiff, int256 sentimentDiff)
+        internal
+    {
         AggregateSignal storage totals = aggregatedSignal;
-        AggregateTokenSignal storage newTokenSignal = aggregateTokenSignal;
 
         if (volumeDiff < 0) {
-            totals.totalVolume -= uint128(uint(-volumeDiff));
-        }
-        else {
-            totals.totalVolume += uint128(uint(volumeDiff));
+            totals.totalVolume -= uint128(uint256(-volumeDiff));
+        } else {
+            totals.totalVolume += uint128(uint256(volumeDiff));
         }
 
         totals.netSentiment += int128(sentimentDiff);
 
-        uint longWeight = totals.netSentiment > 0 ? 10000 * uint(int(totals.netSentiment)) / uint(totals.totalVolume) : 0;
+        uint256 longWeight = totals.netSentiment > 0
+            ? (10000 * uint256(int256(totals.netSentiment))) /
+                uint256(totals.totalVolume)
+            : 0;
         totals.totalLongSentiment = uint128(longWeight);
 
-        uint initialLength = registeredTokens.length();
+        uint256 initialLength = registeredTokens.length();
         address[] memory longTokens = new address[](initialLength);
-        uint[] memory longWeights = new uint[](initialLength);
-        uint longTokenCount = 0;
-        uint totalWeightedLongs = 0;
+        uint256[] memory longWeights = new uint256[](initialLength);
+        uint256 longTokenCount = 0;
+        uint256 totalWeightedLongs = 0;
         if (totals.totalVolume > 0) {
-            for (uint i = 0; i < longTokens.length; i++) {
+            for (uint256 i = 0; i < longTokens.length; i++) {
                 address token = registeredTokens.at(i);
                 TokenSignal memory tokenSignal = tokenSignals[token];
                 if (tokenSignal.totalLongs <= tokenSignal.totalShorts) {
                     continue;
                 }
-                (uint totalLongs, uint totalShorts) = (tokenSignal.totalLongs, tokenSignal.totalShorts);
+                (uint256 totalLongs, uint256 totalShorts) = (
+                    tokenSignal.totalLongs,
+                    tokenSignal.totalShorts
+                );
 
-                uint V_x = totalLongs + totalShorts;
-                uint N_x = totalLongs - totalShorts;
+                uint256 V_x = totalLongs + totalShorts;
+                uint256 N_x = totalLongs - totalShorts;
 
-                uint weighted_x = N_x * V_x / uint(totals.totalVolume);
+                uint256 weighted_x = (N_x * V_x) / uint256(totals.totalVolume);
 
                 longTokens[longTokenCount] = token;
                 longWeights[longTokenCount] = weighted_x;
@@ -268,7 +381,11 @@ contract JuiceStaking is IJuiceStaking, ERC20, Ownable, Pausable, JuiceStakerDel
         }
     }
 
-    function addStake(StakingParam memory param, TokenSignal storage tokenSignal, address staker) internal {
+    function addStake(
+        StakingParam memory param,
+        TokenSignal storage tokenSignal,
+        address staker
+    ) internal {
         if (param.amount == 0) {
             // amount 0 means that stake has been removed
             return;
@@ -286,24 +403,54 @@ contract JuiceStaking is IJuiceStaking, ERC20, Ownable, Pausable, JuiceStakerDel
         }
 
         stake.unstakedBalance -= param.amount;
-        uint tokenPrice = uint(priceOracle.latestAnswer());
-        uint multiplier = 1e16;
-        uint128 positionSize = uint128(uint(param.amount) * multiplier / tokenPrice);
+        uint256 tokenPrice = uint256(priceOracle.latestAnswer());
+
+        uint128 positionSize = uint128(
+            (uint256(param.amount) * INTERNAL_TOKEN_AMOUNT_MULTIPLIER) /
+                tokenPrice
+        );
         if (param.sentiment) {
-            stake.tokenStake[param.token] = StakePosition({amount: positionSize, juiceBalance: -int128(int(uint(param.amount)))});
+            stake.tokenStake[param.token] = StakePosition({
+                amount: positionSize,
+                juiceBalance: -int128(int256(uint256(param.amount)))
+            });
             tokenSignal.totalLongs += param.amount;
-        }
-        else {
-            stake.tokenStake[param.token] = StakePosition({amount: positionSize, juiceBalance: int128(int(uint(param.amount)))});
+        } else {
+            stake.tokenStake[param.token] = StakePosition({
+                amount: positionSize,
+                juiceBalance: int128(int256(uint256(param.amount)))
+            });
             tokenSignal.totalShorts += param.amount;
         }
-        emit StakeAdded(staker, param.token, param.sentiment, tokenPrice, -int128(int(uint(param.amount))));
+        emit StakeAdded(
+            staker,
+            param.token,
+            param.sentiment,
+            tokenPrice,
+            -int128(int256(uint256(param.amount)))
+        );
     }
 
-    error UnsupportedToken(address token);
+    function computeJuiceValue(uint128 tokenAmount, uint256 tokenPrice)
+        internal
+        pure
+        returns (uint256)
+    {
+        // because Solidity rounds numbers towards zero, we add one to the tokenAmount to make sure that
+        // removing the stake with the same tokenPrice refunds the exact same amount of JUICE back
+        return
+            ((tokenAmount + 1) * tokenPrice) / INTERNAL_TOKEN_AMOUNT_MULTIPLIER;
+    }
 
-    function removeStake(address token, Stake storage currentStake, TokenSignal storage tokenSignal, address staker) internal returns (int juiceSupplyDiff) {
-        int128 currentJuiceBalance = currentStake.tokenStake[token].juiceBalance;
+    function removeStake(
+        address token,
+        Stake storage storedStakes,
+        TokenSignal storage tokenSignal,
+        address staker
+    ) internal returns (int256 juiceSupplyDiff) {
+        int128 currentJuiceBalance = storedStakes
+            .tokenStake[token]
+            .juiceBalance;
         if (currentJuiceBalance == 0) {
             // nothing to remove, but not reverting to make parent function implementation simpler
             return 0;
@@ -311,42 +458,69 @@ contract JuiceStaking is IJuiceStaking, ERC20, Ownable, Pausable, JuiceStakerDel
 
         IPriceOracle priceOracle = priceOracles[token];
         if (address(priceOracle) == address(0)) {
-            // TODO handle this properly, we want enable users to close their positions if price oracles change.
-            revert UnsupportedToken(token);
+            storedStakes.tokenStake[token] = StakePosition({
+                amount: 0,
+                juiceBalance: 0
+            });
+            if (currentJuiceBalance < 0) {
+                storedStakes.unstakedBalance += uint128(
+                    uint256(int256(-currentJuiceBalance))
+                );
+            } else {
+                storedStakes.unstakedBalance += uint128(
+                    uint256(int256(currentJuiceBalance))
+                );
+            }
+            return 0;
         }
 
-        uint tokenPrice = uint(priceOracle.latestAnswer());
-        uint multiplier = 1e16;
-
-        // because Solidity rounds numbers towards zero, we add one to the positionSize to make sure that
-        // removing the stake with the same tokenPrice refunds the exact same amount of JUICE back
-        uint positionValue = (currentStake.tokenStake[token].amount + 1) * tokenPrice / multiplier;
-        uint juiceRefund = positionValue;
+        uint256 tokenPrice = uint256(priceOracle.latestAnswer());
+        uint256 positionValue = computeJuiceValue(
+            storedStakes.tokenStake[token].amount,
+            tokenPrice
+        );
+        uint256 juiceRefund = positionValue;
         bool sentiment = currentJuiceBalance < 0;
         if (sentiment) {
-            juiceSupplyDiff = int(positionValue) + currentJuiceBalance;
-            tokenSignal.totalLongs -= uint128(uint(int(-currentJuiceBalance)));
-        }
-        else {
-            int shortPositionValue = (2 * currentJuiceBalance) - int(positionValue);
+            juiceSupplyDiff = int256(positionValue) + currentJuiceBalance;
+            tokenSignal.totalLongs -= uint128(
+                uint256(int256(-currentJuiceBalance))
+            );
+        } else {
+            int256 shortPositionValue = (2 * currentJuiceBalance) -
+                int256(positionValue);
             if (shortPositionValue > 0) {
-                juiceRefund = uint(shortPositionValue);
-                juiceSupplyDiff = int(shortPositionValue) - currentJuiceBalance;
-            }
-            else {
+                juiceRefund = uint256(shortPositionValue);
+                juiceSupplyDiff =
+                    int256(shortPositionValue) -
+                    currentJuiceBalance;
+            } else {
                 juiceRefund = 0;
                 juiceSupplyDiff = -currentJuiceBalance;
             }
-            tokenSignal.totalShorts -= uint128(uint(int(currentJuiceBalance)));
+            tokenSignal.totalShorts -= uint128(
+                uint256(int256(currentJuiceBalance))
+            );
         }
-        currentStake.tokenStake[token] = StakePosition({amount: 0, juiceBalance: 0});
-        currentStake.unstakedBalance += uint128(juiceRefund);
+        storedStakes.tokenStake[token] = StakePosition({
+            amount: 0,
+            juiceBalance: 0
+        });
+        storedStakes.unstakedBalance += uint128(juiceRefund);
 
-        emit StakeRemoved(staker, token, sentiment, tokenPrice, int(juiceRefund));
-
+        emit StakeRemoved(
+            staker,
+            token,
+            sentiment,
+            tokenPrice,
+            int256(juiceRefund)
+        );
     }
 
-    modifier onlyValidPermission(SignedPermission calldata permission, bytes32 hash) {
+    modifier onlyValidPermission(
+        SignedPermission calldata permission,
+        bytes32 hash
+    ) {
         if (block.timestamp > permission.data.deadline) {
             revert PermissionExpired();
         }
@@ -354,14 +528,21 @@ contract JuiceStaking is IJuiceStaking, ERC20, Ownable, Pausable, JuiceStakerDel
             revert InvalidSender();
         }
 
-        uint currentNonce = permissionNonces[permission.data.sender];
+        uint256 currentNonce = permissionNonces[permission.data.sender];
         if (currentNonce != permission.data.nonce) {
             revert InvalidNonce();
         }
         permissionNonces[permission.data.sender] = currentNonce + 1;
 
-        bytes32 EIP712TypedHash = ECDSA.toTypedDataHash(domainSeparatorV4, hash);
-        bool isSignatureValid = SignatureChecker.isValidSignatureNow(permission.data.sender, EIP712TypedHash, permission.signature);
+        bytes32 EIP712TypedHash = ECDSA.toTypedDataHash(
+            domainSeparatorV4,
+            hash
+        );
+        bool isSignatureValid = SignatureChecker.isValidSignatureNow(
+            permission.data.sender,
+            EIP712TypedHash,
+            permission.signature
+        );
         if (!isSignatureValid) {
             revert InvalidSignature();
         }
@@ -369,23 +550,41 @@ contract JuiceStaking is IJuiceStaking, ERC20, Ownable, Pausable, JuiceStakerDel
     }
 
     /// @inheritdoc IJuiceStakerDelegateActions
-    function delegateDeposit(uint amount, SignedPermission calldata permission) external
+    function delegateDeposit(
+        uint256 amount,
+        SignedPermission calldata permission
+    )
+        external
         whenNotPaused
-        onlyValidPermission(permission, hashDeposit(amount, permission.data)) {
+        onlyValidPermission(permission, hashDeposit(amount, permission.data))
+    {
         doDeposit(amount, permission.data.sender);
     }
 
     /// @inheritdoc IJuiceStakerDelegateActions
-    function delegateModifyStakes(StakingParam[] calldata stakes, SignedPermission calldata permission) external
+    function delegateModifyStakes(
+        StakingParam[] calldata stakingParams,
+        SignedPermission calldata permission
+    )
+        external
         whenNotPaused
-        onlyValidPermission(permission, hashModifyStakes(stakes, permission.data))  {
-        doModifyStakes(stakes, permission.data.sender);
+        onlyValidPermission(
+            permission,
+            hashModifyStakes(stakingParams, permission.data)
+        )
+    {
+        doModifyStakes(stakingParams, permission.data.sender);
     }
 
     /// @inheritdoc IJuiceStakerDelegateActions
-    function delegateWithdraw(uint amount, SignedPermission calldata permission) external
+    function delegateWithdraw(
+        uint256 amount,
+        SignedPermission calldata permission
+    )
+        external
         whenNotPaused
-        onlyValidPermission(permission, hashWithdraw(amount, permission.data)) {
+        onlyValidPermission(permission, hashWithdraw(amount, permission.data))
+    {
         doWithdraw(amount, permission.data.sender);
     }
 
@@ -393,13 +592,12 @@ contract JuiceStaking is IJuiceStaking, ERC20, Ownable, Pausable, JuiceStakerDel
     function emergencyPause(bool pauseStaking) external onlyOwner {
         if (pauseStaking) {
             _pause();
-        }
-        else {
+        } else {
             _unpause();
         }
     }
 
-    /// @inheritdoc ERC20
+    /// @inheritdoc ERC20Upgradeable
     function _beforeTokenTransfer(
         address from,
         address to,
@@ -407,8 +605,15 @@ contract JuiceStaking is IJuiceStaking, ERC20, Ownable, Pausable, JuiceStakerDel
     ) internal virtual override {
         super._beforeTokenTransfer(from, to, amount);
 
-        require (!paused(), "JUICE is temporarily disabled");
-
+        require(!paused(), "JUICE is temporarily disabled");
     }
 
+    /// @inheritdoc UUPSUpgradeable
+    function _authorizeUpgrade(address implementation)
+        internal
+        override
+        onlyOwner
+    {
+        /// verify that only owner is allowed to upgrade
+    }
 }

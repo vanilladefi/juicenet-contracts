@@ -9,6 +9,7 @@ import "hardhat-deploy-ethers"
 import "@typechain/hardhat"
 import "solidity-coverage"
 import "@nomiclabs/hardhat-etherscan"
+import "@openzeppelin/hardhat-upgrades"
 import { NetworksUserConfig, NetworkUserConfig } from "hardhat/types"
 
 let networks: NetworksUserConfig = {

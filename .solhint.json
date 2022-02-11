@@ -3,10 +3,11 @@
   "rules": {
     "compiler-version": [
       "error",
-      "^0.6.8"
+      "^0.8.10"
     ],
-    "private-vars-leading-underscore": "error",
     "avoid-low-level-calls": "off",
-    "not-rely-on-time": "off"
+    "not-rely-on-time": "off",
+    "private-vars-leading-underscore": "off",
+    "var-name-mixedcase": "off"
   }
 }
