@@ -27,6 +27,13 @@ let networks: NetworksUserConfig = {
     gasPrice: 200 * 1_000_000_000,
     chainId: 137,
   },
+  mumbai: {
+    url: Networks.mumbai.providerURL,
+    accounts: Networks.mumbai.privateKeys,
+    live: true,
+    gasPrice: 200 * 1_000_000_000,
+    chainId: 80001,
+  },
   ropsten: {
     url: Networks.ropsten.providerURL,
     accounts: Networks.ropsten.privateKeys,
