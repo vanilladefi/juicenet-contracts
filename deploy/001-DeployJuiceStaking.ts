@@ -53,6 +53,8 @@ const func: DeployFunction = async function ({
         receipt,
       })
       contract = stakingContract
+      console.log("Deployed contracts", { proxy: address, implementation: await upgrades.erc1967.getImplementationAddress(address) })
+      console.log(`Gas usage: ${receipt.gasUsed}`)
     } else {
       throw new Error("Mainnet deployment still unsupported")
     }
