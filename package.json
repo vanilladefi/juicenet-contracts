@@ -14,6 +14,7 @@
     "compile:clean:sol": "pnpx hardhat clean --config hardhat.base.ts && pnpx hardhat compile --config hardhat.base.ts",
     "coverage:sol": "pnpx hardhat --show-stack-traces coverage --testfiles \"test/Staking.test.ts\"",
     "node:mainnet-fork": "pnpm run compile:clean:sol && FORK=polygon pnpx hardhat node --verbose --fork-deployments polygon --as-network localhost",
+    "node:testnet-fork": "pnpm run compile:clean:sol && FORK=mumbai pnpx hardhat node --verbose --fork-deployments mumbai --as-network localhost",
     "deploy:goerli": "pnpm run compile:clean:sol && pnpx hardhat --network goerli deploy",
     "deploy:ropsten": "pnpm run compile:clean:sol && pnpx hardhat --network ropsten deploy",
     "deploy:rinkeby": "pnpm run compile:clean:sol && pnpx hardhat --network rinkeby deploy",
