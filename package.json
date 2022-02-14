@@ -18,6 +18,7 @@
     "deploy:goerli": "pnpm run compile:clean:sol && pnpx hardhat --network goerli deploy",
     "deploy:ropsten": "pnpm run compile:clean:sol && pnpx hardhat --network ropsten deploy",
     "deploy:rinkeby": "pnpm run compile:clean:sol && pnpx hardhat --network rinkeby deploy",
+    "deploy:mumbai": "pnpm run compile:clean:sol && pnpx hardhat --network mumbai deploy",
     "node:test-accounts": "pnpx hardhat test-accounts",
     "generate:typechain-wo-hardhat": "pnpx typechain --target ethers-v5 --out-dir typechain/juicenet \"./artifacts/contracts/**/+([a-zA-Z0-9_]).json\"",
     "generate:typechain": "pnpm run generate:typechain-wo-hardhat"
