@@ -243,7 +243,7 @@ describe("Staking", () => {
 
     describe("When no existing stake", () => {
       for (const expectedSentiment of [true, false]) {
-        for (const [firstStake, testType] of [[0, "zero"], [1, "smallest possible"], [250000, "partial"], [1000000, "100%"], [1500000, "over 100%"]]) {
+        for (const [firstStake, testType] of [[0, "zero"], [1, "smallest possible"], [INIT_JUICE_SUPPLY / 10, "partial"], [INIT_JUICE_SUPPLY / 2, "100%"], [INIT_JUICE_SUPPLY / 4 * 3, "over 100%"]]) {
           let oraclePrice = 10 * (10 ** 8)
           let juiceAmount = firstStake as number
           // overstaking is limited to total unstaked balance
