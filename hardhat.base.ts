@@ -10,7 +10,7 @@ import "@typechain/hardhat"
 import "solidity-coverage"
 import "@nomiclabs/hardhat-etherscan"
 import "@openzeppelin/hardhat-upgrades"
-import { NetworksUserConfig, NetworkUserConfig } from "hardhat/types"
+import { HardhatNetworkAccountsUserConfig, NetworksUserConfig, NetworkUserConfig } from "hardhat/types"
 
 let networks: NetworksUserConfig = {
   mainnet: {
@@ -26,6 +26,13 @@ let networks: NetworksUserConfig = {
     live: true,
     gasPrice: 200 * 1_000_000_000,
     chainId: 137,
+  },
+  mumbai: {
+    url: Networks.mumbai.providerURL,
+    accounts: Networks.mumbai.privateKeys,
+    live: true,
+    gasPrice: 200 * 1_000_000_000,
+    chainId: 80001,
   },
   ropsten: {
     url: Networks.ropsten.providerURL,
@@ -54,10 +61,12 @@ let isFork = false
 let localChainId = HARDHAT_NETWORK_ID
 let forkingURL
 let forkId = process.env.FORK as SupportedNetwork
+let forkAccounts: HardhatNetworkAccountsUserConfig = []
 if (forkId) {
   isFork = true
   forkingURL = Networks[forkId].providerURL
   localChainId = networks[forkId]?.chainId || HARDHAT_NETWORK_ID
+  forkAccounts = (Networks[forkId].privateKeys || []).map(pk => ({ privateKey: pk, balance: BigInt(10_000_000_000_000_000_000_000n).toString() }))
 }
 networks.localhost = {
   chainId: localChainId,
@@ -77,6 +86,7 @@ networks.hardhat = {
   live: false,
   saveDeployments: true,
   tags: ["test", "local"],
+  accounts: forkAccounts.length > 0 ? forkAccounts : undefined,
 }
 const hardhatConfig: HardhatUserConfig = {
   etherscan: {
