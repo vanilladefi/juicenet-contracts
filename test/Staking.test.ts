@@ -557,20 +557,21 @@ describe("Staking", () => {
     it("adding second stake removes the first", async () => {
       let [priceOracle] = oracles
       let price = 314252688830
+      const firstStake = INIT_JUICE_SUPPLY / 4, secondStake = INIT_JUICE_SUPPLY / 2
       await priceOracle.setPrice(price)
       {
-        let tx = stakingContract.connect(user).modifyStakes([stake.long(500000)])
-        await expect(tx).to.emit(stakingContract, "StakeAdded").withArgs(user.address, token1, true, price, -500000)
+        let tx = stakingContract.connect(user).modifyStakes([stake.long(firstStake)])
+        await expect(tx).to.emit(stakingContract, "StakeAdded").withArgs(user.address, token1, true, price, -firstStake)
       }
 
       {
-        let tx = stakingContract.connect(user).modifyStakes([stake.long(1000000)])
-        await expect(tx).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token1, true, price, 500000)
-        await expect(tx).to.emit(stakingContract, "StakeAdded").withArgs(user.address, token1, true, price, -1000000)
+        let tx = stakingContract.connect(user).modifyStakes([stake.long(secondStake)])
+        await expect(tx).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token1, true, price, firstStake)
+        await expect(tx).to.emit(stakingContract, "StakeAdded").withArgs(user.address, token1, true, price, -secondStake)
       }
 
       let { juiceValue, sentiment } = await stakingContract.currentStake(user.address, token1)
-      expect(juiceValue).to.equal(1000000)
+      expect(juiceValue).to.equal(secondStake)
       expect(sentiment).to.equal(true)
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(0)
     })
@@ -578,32 +579,33 @@ describe("Staking", () => {
     it("adding second stake removes the first also in shorts", async () => {
       let [priceOracle] = oracles
       let price = 314252688830
+      const firstStake = INIT_JUICE_SUPPLY / 4, secondStake = INIT_JUICE_SUPPLY / 2
       await priceOracle.setPrice(price)
       {
-        let tx = stakingContract.connect(user).modifyStakes([stake.short(500000)])
-        await expect(tx).to.emit(stakingContract, "StakeAdded").withArgs(user.address, token1, false, price, -500000)
+        let tx = stakingContract.connect(user).modifyStakes([stake.short(firstStake)])
+        await expect(tx).to.emit(stakingContract, "StakeAdded").withArgs(user.address, token1, false, price, -firstStake)
       }
 
       {
-        let tx = stakingContract.connect(user).modifyStakes([stake.short(1000000)])
-        await expect(tx).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token1, false, price, 500000)
-        await expect(tx).to.emit(stakingContract, "StakeAdded").withArgs(user.address, token1, false, price, -1000000)
+        let tx = stakingContract.connect(user).modifyStakes([stake.short(secondStake)])
+        await expect(tx).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token1, false, price, firstStake)
+        await expect(tx).to.emit(stakingContract, "StakeAdded").withArgs(user.address, token1, false, price, -secondStake)
       }
 
       let { juiceValue, currentPrice, sentiment } = await stakingContract.currentStake(user.address, token1)
-      expect(juiceValue).to.equal(1000000)
+      expect(juiceValue).to.equal(secondStake)
       expect(currentPrice).to.equal(price)
       expect(sentiment).to.equal(false)
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(0)
     })
 
     it("shorts can only lose the staked amount", async () => {
-      let totalAmount = 1000000
+      let totalAmount = INIT_JUICE_SUPPLY / 2
       let [priceOracle] = oracles
       let price = 314252688830n
-      let stakedAmount = 500000
+      let stakedAmount = totalAmount / 2
       // to have totalsupply amounts match with a fixture that creates multiple users
-      let nonUserTotalAmount = 1000000
+      let nonUserTotalAmount = INIT_JUICE_SUPPLY / 2
 
       await priceOracle.setPrice(price)
       await stakingContract.connect(user).modifyStakes([stake.short(stakedAmount)])
@@ -631,24 +633,25 @@ describe("Staking", () => {
     it("refunds the original amount when closing a stake after price oracle has been removed", async () => {
       let [priceOracle] = oracles
       let price = 314252688830
-      await stakingContract.connect(user2).deposit(250000)
+      const depositAmount = INIT_JUICE_SUPPLY / 8, user1Stake = 500000, user2Stake = 250000
+      await stakingContract.connect(user2).deposit(depositAmount)
       await priceOracle.setPrice(price)
       let [expectedUser1Balance, expectedUser2Balance] = await Promise.all([
         stakingContract.unstakedBalanceOf(user.address),
         stakingContract.unstakedBalanceOf(user2.address)])
-      await stakingContract.connect(user).modifyStakes([stake.long(500000)])
-      await stakingContract.connect(user2).modifyStakes([stake.short(250000)])
+      await stakingContract.connect(user).modifyStakes([stake.long(user1Stake)])
+      await stakingContract.connect(user2).modifyStakes([stake.short(user2Stake)])
 
       // make price go up 50% to verify that removing price oracle will affect in juice value calculations in both long and short positions
       let newPrice = Math.floor(price * 1.5)
       await priceOracle.setPrice(newPrice)
-      expect(await currentStake(user.address, token1)).to.include({ juiceStake: 500000, juiceValue: 750000, currentPrice: newPrice, sentiment: true })
-      expect(await currentStake(user2.address, token1)).to.include({ juiceStake: 250000, juiceValue: 125000, currentPrice: newPrice, sentiment: false })
+      expect(await currentStake(user.address, token1)).to.include({ juiceStake: user1Stake, juiceValue: user1Stake * 1.5, currentPrice: newPrice, sentiment: true })
+      expect(await currentStake(user2.address, token1)).to.include({ juiceStake: user2Stake, juiceValue: user2Stake / 2, currentPrice: newPrice, sentiment: false })
 
       await stakingContract.connect(deployer).updatePriceOracles([token1], [ethers.constants.AddressZero])
 
-      expect(await currentStake(user.address, token1)).to.include({ juiceStake: 500000, juiceValue: 500000, currentPrice: 0, sentiment: true })
-      expect(await currentStake(user2.address, token1)).to.include({ juiceStake: 250000, juiceValue: 250000, currentPrice: 0, sentiment: false })
+      expect(await currentStake(user.address, token1)).to.include({ juiceStake: user1Stake, juiceValue: user1Stake, currentPrice: 0, sentiment: true })
+      expect(await currentStake(user2.address, token1)).to.include({ juiceStake: user2Stake, juiceValue: user2Stake, currentPrice: 0, sentiment: false })
 
       await stakingContract.connect(user).modifyStakes([stake.long(0)])
       await stakingContract.connect(user2).modifyStakes([stake.short(0)])
@@ -660,33 +663,34 @@ describe("Staking", () => {
     it("fails when paused", async () => {
       await stakingContract.connect(deployer).emergencyPause(true)
       let tx = stakingContract.connect(user).modifyStakes([
-        stake.long(100),
+        stake.long(INIT_JUICE_SUPPLY / 10),
       ])
       await expect(tx).to.revertedWith("Pausable: paused")
     })
 
     it("fails when staking token without price oracle", async () => {
-      let tx = stakingContract.connect(user).modifyStakes([Stakes(tokenWithoutPriceOracle).long(100)])
+      let tx = stakingContract.connect(user).modifyStakes([Stakes(tokenWithoutPriceOracle).long(INIT_JUICE_SUPPLY / 10)])
       await expect(tx).to.revertedWith(`InvalidToken("${tokenWithoutPriceOracle}")`)
     })
 
     it("no-op when staking 0", async () => {
       let [priceOracle] = oracles
+      const price = 100000000
       await priceOracle.setPrice(100000000)
       let tx = stakingContract.connect(user).modifyStakes([stake.long(0)])
       await expect(tx).to.not.emit(stakingContract, "StakeAdded")
       let { juiceValue, sentiment } = await stakingContract.currentStake(user.address, token1)
       expect(juiceValue).to.equal(0)
       expect(sentiment).to.equal(false)
-      expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(1000000)
+      expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(INIT_JUICE_SUPPLY / 2)
     })
 
     it("stake is limited when overstaking", async () => {
       let [priceOracle] = oracles
       await priceOracle.setPrice(100000000)
-      await stakingContract.connect(user).modifyStakes([stake.long(1500000)])
+      await stakingContract.connect(user).modifyStakes([stake.long(INIT_JUICE_SUPPLY / 2 * 1.5)])
       let { juiceValue, sentiment } = await stakingContract.currentStake(user.address, token1)
-      expect(juiceValue).to.equal(1000000)
+      expect(juiceValue).to.equal(INIT_JUICE_SUPPLY / 2)
       expect(sentiment).to.equal(true)
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(0)
     })
