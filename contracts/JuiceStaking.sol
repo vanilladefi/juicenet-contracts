@@ -70,6 +70,10 @@ contract JuiceStaking is
 
     bytes32 public domainSeparatorV4;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {
+    }
+
     function initialize() public initializer {
         __ERC20_init("Vanilla Juice", "JUICE");
         __UUPSUpgradeable_init();
