@@ -15,4 +15,27 @@ contract MockJuiceStaking is JuiceStaking {
     function hasRegisteredToken(address addr) public view returns (bool) {
         return registeredTokens.contains(addr);
     }
+
+    struct TokenOracleTuple {
+        address token;
+        address oracle;
+    }
+
+    function getRegisteredTokensAndOracles()
+        public
+        view
+        returns (TokenOracleTuple[] memory)
+    {
+        TokenOracleTuple[] memory tokensAndOracles = new TokenOracleTuple[](
+            registeredTokens.length()
+        );
+        for (uint256 i = 0; i < registeredTokens.length(); i++) {
+            address token = registeredTokens.at(i);
+            tokensAndOracles[i] = TokenOracleTuple({
+                token: token,
+                oracle: address(priceOracles[token])
+            });
+        }
+        return tokensAndOracles;
+    }
 }
