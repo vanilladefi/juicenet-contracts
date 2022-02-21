@@ -112,10 +112,8 @@ contract JuiceStaking is
             if (actualDecimals != DECIMALS) {
                 revert OracleDecimalMismatch(DECIMALS, actualDecimals);
             }
-            // checking the return value here saves us 200 gas (per EIP-1283)
-            if (registeredTokens.add(tokens[i])) {
-                priceOracles[tokens[i]] = oracles[i];
-            }
+            priceOracles[tokens[i]] = oracles[i];
+            registeredTokens.add(tokens[i]);
         }
     }
 
