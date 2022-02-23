@@ -48,7 +48,7 @@ export default async (_: never, { ethers }: HardhatRuntimeEnvironment): Promise<
   let newHolders: {receiver: string, amount: bigint}[] = holders
     .sort(([a1, b1], [a2, b2]) => Number(b1.amount - b2.amount))
     .filter(([address, data]) => !data.contract)
-    .map(([address, data]) => ({ receiver: address, amount: data.amount }))
+    .map(([address, data]) => ({ receiver: address, amount: data.amount / (10n ** 4n) }))
   await writeFile("premine.json", JSON.stringify(newHolders,
     (key, value) => typeof value === "bigint" ? value.toString() : value,
     4), "utf8")
