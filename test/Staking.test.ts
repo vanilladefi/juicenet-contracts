@@ -10,6 +10,8 @@ import {
   MockPriceOracle__factory,
   MockSignalAggregator,
   MockSignalAggregator__factory,
+  MockSignatureVerifier,
+  MockSignatureVerifier__factory,
 } from "../typechain/juicenet"
 
 import { ethers, waffle, upgrades } from "hardhat"
@@ -48,6 +50,7 @@ const initializeJuicenet = async ([deployer, a, b, noDeposit, withDeposit]: Wall
     await new MockPriceOracle__factory(deployer).deploy().then(setPrice(50 * DECIMALS))]
 
   let signalAggregator = await new MockSignalAggregator__factory(deployer).deploy()
+  let signatureVerifier = await new MockSignatureVerifier__factory(deployer).deploy()
 
   await stakingContract.connect(deployer).mintJuice([noDeposit.address, withDeposit.address], [INIT_JUICE_SUPPLY / 2, INIT_JUICE_SUPPLY / 2])
   await stakingContract.connect(withDeposit).deposit(INIT_JUICE_SUPPLY / 2)
@@ -61,6 +64,7 @@ const initializeJuicenet = async ([deployer, a, b, noDeposit, withDeposit]: Wall
     users: { noJuice: a, noDeposit, withDeposit },
     tokens,
     oracles,
+    signatureVerifier
   }
 }
 
@@ -694,6 +698,26 @@ describe("Staking", () => {
       expect(sentiment).to.equal(true)
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(0)
     })
+
+    it("Staking max of one token leaves zero for the other token", async () => {
+      await stakingContract.connect(user).modifyStakes([Stakes(token1).long(INIT_JUICE_SUPPLY * 2), Stakes(token2).long(INIT_JUICE_SUPPLY / 4)])
+      let { juiceValue: a1 } = await stakingContract.currentStake(user.address, token1)
+      let { juiceValue: a2, sentiment } = await stakingContract.currentStake(user.address, token2)
+
+      expect(sentiment).to.equal(false)
+      expect(a1).to.equal(INIT_JUICE_SUPPLY / 2)
+      expect(a2).to.equal(0)
+      expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(0)
+    })
+
+    it("Staking one token atomically twice uses the latter stake", async () => {
+      const realStake = INIT_JUICE_SUPPLY / 20 * 6
+      await stakingContract.connect(user).modifyStakes([Stakes(token1).long(INIT_JUICE_SUPPLY / 4), Stakes(token1).short(realStake)])
+      let { juiceValue: a1, sentiment } = await stakingContract.currentStake(user.address, token1)
+      expect(sentiment).to.equal(false)
+      expect(a1).to.equal(realStake)
+      expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal((INIT_JUICE_SUPPLY / 2) - realStake)
+    })
   })
 
   describe("Updating Price Oracles", () => {
@@ -852,12 +876,14 @@ describe("Staking", () => {
 
   describe("Delegating deposit and withdraw", () => {
     let stakingContract: JuiceStaking
+    let signatureVerifier: MockSignatureVerifier
     let user: Wallet
     let helper: { signDeposit: any; signWithdraw: any; domain?: () => Promise<{ name: string; version: string; chainId: number; verifyingContract: string }>; signModifyStakes?: (stakes: { sentiment: boolean; token: string; amount: BigNumberish }[], user: Wallet, nonce: number, deadline?: number) => Promise<{ data: { sender: string; deadline: number; nonce: number }; signature: string }> }
     beforeEach(async () => {
-      ({ stakingContract, users: { noDeposit: user } } = await loadFixture(initializeJuicenet))
+      ({ stakingContract, signatureVerifier, users: { noDeposit: user } } = await loadFixture(initializeJuicenet))
       helper = SigningHelper(ethers.provider, stakingContract)
       stakingContract = stakingContract.connect(deployer)
+      signatureVerifier = signatureVerifier
     })
 
     it("makes single deposit", async () => {
@@ -938,6 +964,36 @@ describe("Staking", () => {
       let amount = 100
       await expect(stakingContract.delegateDeposit(amount, await helper.signDeposit(amount, user, 0))).to.be.revertedWith("Pausable: paused")
       await expect(stakingContract.delegateWithdraw(amount, await helper.signWithdraw(amount, user, 0))).to.be.revertedWith("Pausable: paused")
+    })
+
+    const getDummyContractPermission = async () => {
+      const deadline : number= await ethers.provider.getBlock("latest").then(b => b.timestamp + 10000)
+
+      let permission = {
+        sender: signatureVerifier.address,
+        deadline: deadline,
+        nonce: 0,
+      }
+
+      let signature = "0xabab"; // dummy
+      let signedPermission = { data: permission, signature }
+      return signedPermission
+    }
+
+    it("contract signature checking succeeds", async () => {
+      let amount = 100
+      await stakingContract.mintJuice([signatureVerifier.address], [amount])
+      const sign = await getDummyContractPermission();
+      await stakingContract.delegateDeposit(amount, sign)
+      expect(await stakingContract.unstakedBalanceOf(signatureVerifier.address)).to.equal(amount)
+    })
+
+    it("contract signature checking fails", async () => {
+      let amount = 100
+      await stakingContract.mintJuice([signatureVerifier.address], [amount])      
+      const sign = await getDummyContractPermission();
+      await signatureVerifier.setIsValidSignature(false);
+      await expect(stakingContract.delegateDeposit(amount, sign)).to.be.revertedWith("InvalidSignature()")
     })
   })
 
