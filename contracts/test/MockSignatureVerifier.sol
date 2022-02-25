@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.10;
 
-import "@openzeppelin/contracts/interfaces/IERC1271.sol";
+import "@openzeppelin/contracts-upgradeable/interfaces/IERC1271Upgradeable.sol";
 
-contract MockSignatureVerifier is IERC1271 {
+contract MockSignatureVerifier is IERC1271Upgradeable {
     bool private mockIsValid = true;
 
     function isValidSignature(bytes32 hash, bytes memory signature)
@@ -13,7 +13,7 @@ contract MockSignatureVerifier is IERC1271 {
         returns (bytes4 magicValue)
     {
         if (mockIsValid) {
-            return IERC1271.isValidSignature.selector; // valid
+            return IERC1271Upgradeable.isValidSignature.selector; // valid
         }
         return "abcd"; // invalid
     }

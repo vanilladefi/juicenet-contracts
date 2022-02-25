@@ -64,7 +64,7 @@ const initializeJuicenet = async ([deployer, a, b, noDeposit, withDeposit]: Wall
     users: { noJuice: a, noDeposit, withDeposit },
     tokens,
     oracles,
-    signatureVerifier
+    signatureVerifier,
   }
 }
 
@@ -971,7 +971,7 @@ describe("Staking", () => {
     })
 
     const getDummyContractPermission = async () => {
-      const deadline : number= await ethers.provider.getBlock("latest").then(b => b.timestamp + 10000)
+      const deadline : number = await ethers.provider.getBlock("latest").then(b => b.timestamp + 10000)
 
       let permission = {
         sender: signatureVerifier.address,
@@ -979,7 +979,7 @@ describe("Staking", () => {
         nonce: 0,
       }
 
-      let signature = "0xabab"; // dummy
+      let signature = "0xabab" // dummy
       let signedPermission = { data: permission, signature }
       return signedPermission
     }
@@ -987,16 +987,16 @@ describe("Staking", () => {
     it("contract signature checking succeeds", async () => {
       let amount = 100
       await stakingContract.mintJuice([signatureVerifier.address], [amount])
-      const sign = await getDummyContractPermission();
+      const sign = await getDummyContractPermission()
       await stakingContract.delegateDeposit(amount, sign)
       expect(await stakingContract.unstakedBalanceOf(signatureVerifier.address)).to.equal(amount)
     })
 
     it("contract signature checking fails", async () => {
       let amount = 100
-      await stakingContract.mintJuice([signatureVerifier.address], [amount])      
-      const sign = await getDummyContractPermission();
-      await signatureVerifier.setIsValidSignature(false);
+      await stakingContract.mintJuice([signatureVerifier.address], [amount])
+      const sign = await getDummyContractPermission()
+      await signatureVerifier.setIsValidSignature(false)
       await expect(stakingContract.delegateDeposit(amount, sign)).to.be.revertedWith("InvalidSignature()")
     })
   })
