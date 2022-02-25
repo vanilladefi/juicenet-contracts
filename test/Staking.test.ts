@@ -26,8 +26,8 @@ const { provider: networkProvider } = ethers
 const loadFixture = createFixtureLoader(provider.getWallets(), provider)
 
 const value = (p: BigNumberish) => BigInt(p.toString())
-const INIT_JUICE_SUPPLY = 2000000;
-const TOKEN_DECIMALS = 8;
+const INIT_JUICE_SUPPLY = 2000000
+const TOKEN_DECIMALS = 8
 
 const initializeJuicenet = async ([deployer, a, b, noDeposit, withDeposit]: Wallet[]) => {
   let stakingContractImpl = await ethers.getContractFactory("MockJuiceStaking", deployer)
@@ -91,7 +91,7 @@ describe("Staking", () => {
     })
 
     it("transfer() ok", async () => {
-      const transferAmount = INIT_JUICE_SUPPLY / 4;
+      const transferAmount = INIT_JUICE_SUPPLY / 4
       await expect(() => erc20.connect(withJuice).transfer(noJuice.address, transferAmount)).to.changeTokenBalances(
         erc20,
         [withJuice, noJuice],
@@ -557,7 +557,8 @@ describe("Staking", () => {
     it("adding second stake removes the first", async () => {
       let [priceOracle] = oracles
       let price = 314252688830
-      const firstStake = INIT_JUICE_SUPPLY / 4, secondStake = INIT_JUICE_SUPPLY / 2
+      const firstStake = INIT_JUICE_SUPPLY / 4
+      const secondStake = INIT_JUICE_SUPPLY / 2
       await priceOracle.setPrice(price)
       {
         let tx = stakingContract.connect(user).modifyStakes([stake.long(firstStake)])
@@ -579,7 +580,8 @@ describe("Staking", () => {
     it("adding second stake removes the first also in shorts", async () => {
       let [priceOracle] = oracles
       let price = 314252688830
-      const firstStake = INIT_JUICE_SUPPLY / 4, secondStake = INIT_JUICE_SUPPLY / 2
+      const firstStake = INIT_JUICE_SUPPLY / 4
+      const secondStake = INIT_JUICE_SUPPLY / 2
       await priceOracle.setPrice(price)
       {
         let tx = stakingContract.connect(user).modifyStakes([stake.short(firstStake)])
@@ -633,7 +635,9 @@ describe("Staking", () => {
     it("refunds the original amount when closing a stake after price oracle has been removed", async () => {
       let [priceOracle] = oracles
       let price = 314252688830
-      const depositAmount = INIT_JUICE_SUPPLY / 8, user1Stake = 500000, user2Stake = 250000
+      const depositAmount = INIT_JUICE_SUPPLY / 8
+      const user1Stake = 500000
+      const user2Stake = 250000
       await stakingContract.connect(user2).deposit(depositAmount)
       await priceOracle.setPrice(price)
       let [expectedUser1Balance, expectedUser2Balance] = await Promise.all([
