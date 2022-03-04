@@ -6,6 +6,8 @@ import "../interfaces/IPriceOracle.sol";
 
 contract MockPriceOracle is IPriceOracle {
     int256 private price;
+    uint80 private roundId;
+    uint256 private timestamp;
 
     function decimals() external pure returns (uint8) {
         return 8;
@@ -13,9 +15,21 @@ contract MockPriceOracle is IPriceOracle {
 
     function setPrice(int256 newPrice) external {
         price = newPrice;
+        roundId++;
+        timestamp = block.timestamp;
     }
 
-    function latestAnswer() external view returns (int256) {
-        return price;
+    function latestRoundData()
+        external
+        view
+        returns (
+            uint80,
+            int256,
+            uint256,
+            uint256,
+            uint80
+        )
+    {
+        return (roundId, price, timestamp, timestamp, roundId);
     }
 }
