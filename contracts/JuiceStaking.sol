@@ -151,7 +151,7 @@ contract JuiceStaking is
         if (address(priceOracle) == address(0)) {
             return (0, false);
         }
-        return (uint256(priceOracle.latestAnswer()), true);
+        return (latestAnswer(priceOracle), true);
     }
 
     /// @inheritdoc IJuiceStaking
@@ -381,6 +381,15 @@ contract JuiceStaking is
         }
     }
 
+    function latestAnswer(IPriceOracle priceOracle)
+        internal
+        view
+        returns (uint256)
+    {
+        (, int256 answer, , , ) = priceOracle.latestRoundData();
+        return uint256(answer);
+    }
+
     function addStake(
         StakingParam memory param,
         TokenSignal storage tokenSignal,
@@ -403,7 +412,7 @@ contract JuiceStaking is
         }
 
         stake.unstakedBalance -= param.amount;
-        uint256 tokenPrice = uint256(priceOracle.latestAnswer());
+        uint256 tokenPrice = latestAnswer(priceOracle);
 
         uint128 positionSize = uint128(
             (uint256(param.amount) * INTERNAL_TOKEN_AMOUNT_MULTIPLIER) /
@@ -474,7 +483,7 @@ contract JuiceStaking is
             return 0;
         }
 
-        uint256 tokenPrice = uint256(priceOracle.latestAnswer());
+        uint256 tokenPrice = latestAnswer(priceOracle);
         uint256 positionValue = computeJuiceValue(
             storedStakes.tokenStake[token].amount,
             tokenPrice
