@@ -187,20 +187,23 @@ contract JuiceStaking is
     function stakeAmount(
         IPriceOracle oracle,
         OraclePosition memory pricePosition,
-        uint256 juiceStake
+        uint256 juiceStake,
+        OracleAnswer memory current
     ) internal view returns (uint128) {
-        OracleAnswer memory priceAfter = getRoundData(
-            oracle,
-            pricePosition.roundId + 1
-        );
-        if (priceAfter.timestamp < pricePosition.timestamp + 60) {
-            // the position was opened one minute before the oracle price change tx, so let's use the priceAfter to
-            // mitigate the most blatant front-running
-            return
-                uint128(
-                    (juiceStake * INTERNAL_TOKEN_AMOUNT_MULTIPLIER) /
-                        priceAfter.price
-                );
+        if (current.roundId > pricePosition.roundId) {
+            OracleAnswer memory priceAfter = getRoundData(
+                oracle,
+                pricePosition.roundId + 1
+            );
+            if (priceAfter.timestamp < pricePosition.timestamp + 60) {
+                // the position was opened one minute before the oracle price change tx, so let's use the priceAfter to
+                // mitigate the most blatant front-running
+                return
+                    uint128(
+                        (juiceStake * INTERNAL_TOKEN_AMOUNT_MULTIPLIER) /
+                            priceAfter.price
+                    );
+            }
         }
         OracleAnswer memory priceBefore = getRoundData(
             oracle,
@@ -242,7 +245,12 @@ contract JuiceStaking is
             juiceStake = uint256(int256(-stake.juiceBalance));
             juiceValue = oracleFound
                 ? computeJuiceValue(
-                    stakeAmount(oracle, stake.pricePosition, juiceStake),
+                    stakeAmount(
+                        oracle,
+                        stake.pricePosition,
+                        juiceStake,
+                        currentAnswer
+                    ),
                     currentPrice
                 )
                 : juiceStake;
@@ -255,7 +263,8 @@ contract JuiceStaking is
                             stakeAmount(
                                 oracle,
                                 stake.pricePosition,
-                                juiceStake
+                                juiceStake,
+                                currentAnswer
                             ),
                             currentPrice
                         )
@@ -575,7 +584,8 @@ contract JuiceStaking is
                 stakeAmount(
                     priceOracle,
                     storedStakes.tokenStake[token].pricePosition,
-                    juiceAmount
+                    juiceAmount,
+                    answer
                 ),
                 answer.price
             );
@@ -588,7 +598,8 @@ contract JuiceStaking is
                 stakeAmount(
                     priceOracle,
                     storedStakes.tokenStake[token].pricePosition,
-                    juiceAmount
+                    juiceAmount,
+                    answer
                 ),
                 answer.price
             );
