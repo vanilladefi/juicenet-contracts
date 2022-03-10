@@ -10,6 +10,8 @@ import {
   MockPriceOracle__factory,
   MockSignalAggregator,
   MockSignalAggregator__factory,
+  MockSignatureVerifier,
+  MockSignatureVerifier__factory,
 } from "../typechain/juicenet"
 
 import { ethers, waffle, upgrades } from "hardhat"
@@ -29,11 +31,11 @@ const value = (p: BigNumberish) => BigInt(p.toString())
 const INIT_JUICE_SUPPLY = 2000000
 const TOKEN_DECIMALS = 8
 
+const createRandomEthereumAddress = () => ethers.utils.getAddress(ethers.utils.hexZeroPad("0x" + randomBytes(20).toString("hex"), 20))
 const initializeJuicenet = async ([deployer, a, b, noDeposit, withDeposit]: Wallet[]) => {
   let stakingContractImpl = await ethers.getContractFactory("MockJuiceStaking", deployer)
   let stakingContract = await upgrades.deployProxy(stakingContractImpl, { kind: "uups" }) as MockJuiceStaking
 
-  const createRandomEthereumAddress = () => ethers.utils.getAddress(ethers.utils.hexZeroPad("0x" + randomBytes(20).toString("hex"), 20))
   let tokens = [...Array(3)].map(createRandomEthereumAddress)
   let tokenWithoutPriceOracle = createRandomEthereumAddress()
 
@@ -48,6 +50,7 @@ const initializeJuicenet = async ([deployer, a, b, noDeposit, withDeposit]: Wall
     await new MockPriceOracle__factory(deployer).deploy().then(setPrice(50 * DECIMALS))]
 
   let signalAggregator = await new MockSignalAggregator__factory(deployer).deploy()
+  let signatureVerifier = await new MockSignatureVerifier__factory(deployer).deploy()
 
   await stakingContract.connect(deployer).mintJuice([noDeposit.address, withDeposit.address], [INIT_JUICE_SUPPLY / 2, INIT_JUICE_SUPPLY / 2])
   await stakingContract.connect(withDeposit).deposit(INIT_JUICE_SUPPLY / 2)
@@ -61,6 +64,7 @@ const initializeJuicenet = async ([deployer, a, b, noDeposit, withDeposit]: Wall
     users: { noJuice: a, noDeposit, withDeposit },
     tokens,
     oracles,
+    signatureVerifier,
   }
 }
 
@@ -616,7 +620,8 @@ describe("Staking", () => {
     it("adding second stake removes the first also in shorts", async () => {
       let [priceOracle] = oracles
       let price = 314252688830
-      const firstStake = INIT_JUICE_SUPPLY / 4; const secondStake = INIT_JUICE_SUPPLY / 2
+      const firstStake = INIT_JUICE_SUPPLY / 4
+      const secondStake = INIT_JUICE_SUPPLY / 2
       await priceOracle.setPrice(price)
       {
         let tx = stakingContract.connect(user).modifyStakes([stake.short(firstStake)])
@@ -670,7 +675,9 @@ describe("Staking", () => {
     it("refunds the original amount when closing a stake after price oracle has been removed", async () => {
       let [priceOracle] = oracles
       let price = 314252688830
-      const depositAmount = INIT_JUICE_SUPPLY / 8; const user1Stake = 500000; const user2Stake = 250000
+      const depositAmount = INIT_JUICE_SUPPLY / 8
+      const user1Stake = 500000
+      const user2Stake = 250000
       await stakingContract.connect(user2).deposit(depositAmount)
       await priceOracle.setPrice(price)
       let [expectedUser1Balance, expectedUser2Balance] = await Promise.all([
@@ -731,6 +738,26 @@ describe("Staking", () => {
       expect(sentiment).to.equal(true)
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(0)
     })
+
+    it("Staking max of one token leaves zero for the other token", async () => {
+      await stakingContract.connect(user).modifyStakes([Stakes(token1).long(INIT_JUICE_SUPPLY * 2), Stakes(token2).long(INIT_JUICE_SUPPLY / 4)])
+      let { juiceValue: a1 } = await stakingContract.currentStake(user.address, token1)
+      let { juiceValue: a2, sentiment } = await stakingContract.currentStake(user.address, token2)
+
+      expect(sentiment).to.equal(false)
+      expect(a1).to.equal(INIT_JUICE_SUPPLY / 2)
+      expect(a2).to.equal(0)
+      expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(0)
+    })
+
+    it("Staking one token atomically twice uses the latter stake", async () => {
+      const realStake = INIT_JUICE_SUPPLY / 20 * 6
+      await stakingContract.connect(user).modifyStakes([Stakes(token1).long(INIT_JUICE_SUPPLY / 4), Stakes(token1).short(realStake)])
+      let { juiceValue: a1, sentiment } = await stakingContract.currentStake(user.address, token1)
+      expect(sentiment).to.equal(false)
+      expect(a1).to.equal(realStake)
+      expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal((INIT_JUICE_SUPPLY / 2) - realStake)
+    })
   })
 
   describe("Updating Price Oracles", () => {
@@ -741,8 +768,9 @@ describe("Staking", () => {
     let oracle1: string, oracle2: string, oracle3: string
     let nonOwner: Wallet, arbitrary: Wallet
     let zero_address = "0x0000000000000000000000000000000000000000"
+    let tokenWithoutPriceOracle: string
     beforeEach(async () => {
-      ({ stakingContract, oracles, tokens, accounts: [nonOwner, arbitrary] } = await loadFixture(initializeJuicenet));
+      ({ stakingContract, oracles, tokens, tokenWithoutPriceOracle, accounts: [nonOwner, arbitrary] } = await loadFixture(initializeJuicenet));
       ([token1, token2, token3] = tokens);
       ([oracle1, oracle2, oracle3] = oracles.map(x => x.address))
     })
@@ -780,6 +808,32 @@ describe("Staking", () => {
         expect(await stakingContract.getPriceOracle(token2)).to.equal(oracle2)
         expect(await stakingContract.getPriceOracle(token3)).to.equal(zero_address)
       })
+      it("changes oracle on re-register", async () => {
+        let [{ token, oracle: previousOracle }] = await stakingContract.getRegisteredTokensAndOracles()
+        expect(previousOracle).to.not.equal(oracle2)
+        await stakingContract.updatePriceOracles([token], [oracle2])
+        let [{ token: newToken, oracle }] = await stakingContract.getRegisteredTokensAndOracles()
+        expect(newToken).to.equal(token)
+        expect(oracle).to.equal(oracle2)
+      })
+      it("does nothing when re-registering same token-oracle pair", async () => {
+        let expected = await stakingContract.getRegisteredTokensAndOracles()
+        let [{ token: expectedToken, oracle: expectedOracle }] = expected
+
+        await stakingContract.updatePriceOracles([expectedToken], [expectedOracle])
+
+        let actual = await stakingContract.getRegisteredTokensAndOracles()
+        expect(actual.length).to.equal(expected.length)
+        expect(actual[0].token).to.equal(expectedToken)
+        expect(actual[0].oracle).to.equal(expectedOracle)
+      })
+
+      it("does nothing when removing a non-existent token", async () => {
+        let expected = await stakingContract.getRegisteredTokensAndOracles()
+        await stakingContract.updatePriceOracles([tokenWithoutPriceOracle], [ethers.constants.AddressZero])
+        expect(await stakingContract.getRegisteredTokensAndOracles()).to.eql(expected)
+      })
+
       it("fails when input array lengths mismatch", async () => {
         await expect(stakingContract.updatePriceOracles([token1], [oracle1, oracle2])).to.revertedWith("TokenOracleMismatch(1, 2)")
         await expect(stakingContract.updatePriceOracles([token1, token2], [oracle1])).to.revertedWith("TokenOracleMismatch(2, 1)")
@@ -889,12 +943,14 @@ describe("Staking", () => {
 
   describe("Delegating deposit and withdraw", () => {
     let stakingContract: JuiceStaking
+    let signatureVerifier: MockSignatureVerifier
     let user: Wallet
     let helper: { signDeposit: any; signWithdraw: any; domain?: () => Promise<{ name: string; version: string; chainId: number; verifyingContract: string }>; signModifyStakes?: (stakes: { sentiment: boolean; token: string; amount: BigNumberish }[], user: Wallet, nonce: number, deadline?: number) => Promise<{ data: { sender: string; deadline: number; nonce: number }; signature: string }> }
     beforeEach(async () => {
-      ({ stakingContract, users: { noDeposit: user } } = await loadFixture(initializeJuicenet))
+      ({ stakingContract, signatureVerifier, users: { noDeposit: user } } = await loadFixture(initializeJuicenet))
       helper = SigningHelper(ethers.provider, stakingContract)
       stakingContract = stakingContract.connect(deployer)
+      signatureVerifier = signatureVerifier
     })
 
     it("makes single deposit", async () => {
@@ -975,6 +1031,36 @@ describe("Staking", () => {
       let amount = 100
       await expect(stakingContract.delegateDeposit(amount, await helper.signDeposit(amount, user, 0))).to.be.revertedWith("Pausable: paused")
       await expect(stakingContract.delegateWithdraw(amount, await helper.signWithdraw(amount, user, 0))).to.be.revertedWith("Pausable: paused")
+    })
+
+    const getDummyContractPermission = async () => {
+      const deadline : number = await ethers.provider.getBlock("latest").then(b => b.timestamp + 10000)
+
+      let permission = {
+        sender: signatureVerifier.address,
+        deadline: deadline,
+        nonce: 0,
+      }
+
+      let signature = "0xabab" // dummy
+      let signedPermission = { data: permission, signature }
+      return signedPermission
+    }
+
+    it("contract signature checking succeeds", async () => {
+      let amount = 100
+      await stakingContract.mintJuice([signatureVerifier.address], [amount])
+      const sign = await getDummyContractPermission()
+      await stakingContract.delegateDeposit(amount, sign)
+      expect(await stakingContract.unstakedBalanceOf(signatureVerifier.address)).to.equal(amount)
+    })
+
+    it("contract signature checking fails", async () => {
+      let amount = 100
+      await stakingContract.mintJuice([signatureVerifier.address], [amount])
+      const sign = await getDummyContractPermission()
+      await signatureVerifier.setIsValidSignature(false)
+      await expect(stakingContract.delegateDeposit(amount, sign)).to.be.revertedWith("InvalidSignature()")
     })
   })
 

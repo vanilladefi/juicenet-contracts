@@ -82,6 +82,10 @@ contract JuiceStaking is
 
     bytes32 public domainSeparatorV4;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {
+    }
+
     function initialize() public initializer {
         __ERC20_init("Vanilla Juice", "JUICE");
         __UUPSUpgradeable_init();
@@ -110,8 +114,10 @@ contract JuiceStaking is
         }
         for (uint256 i = 0; i < oracles.length; i++) {
             if (address(oracles[i]) == address(0)) {
-                delete priceOracles[tokens[i]];
-                registeredTokens.remove(tokens[i]);
+                // checking the return value here saves us 200 gas (per EIP-1283)
+                if (registeredTokens.remove(tokens[i])) {
+                    delete priceOracles[tokens[i]];
+                }
                 continue;
             }
             uint8 actualDecimals = oracles[i].decimals();
