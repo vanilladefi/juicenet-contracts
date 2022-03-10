@@ -28,9 +28,26 @@ contract JuiceStaking is
 
     /// used in StakePosition.amount calculations to retain good enough precision in intermediate price math
     uint256 private constant INTERNAL_TOKEN_AMOUNT_MULTIPLIER = 1e16;
+
+    /// this struct is used in contract storage, so it's been optimized to fit in uint128
+    struct OraclePosition {
+        /// downcasted from the value range of block.timestamp, which overflows uint64 in distant enough future
+        uint64 timestamp;
+        /// downcasted from the value range of uint80, but original value increments sequentially on every price update
+        /// in single oracle, so overflow is improbable
+        uint64 roundId;
+    }
+
+    /// this struct is memory-only so no need to optimize the layout
+    struct OracleAnswer {
+        uint80 roundId;
+        uint256 price;
+        uint256 timestamp;
+    }
+
     struct StakePosition {
-        /// The amount of tokens at stake.
-        uint128 amount;
+        /// The price position from Oracle when position was opened.
+        OraclePosition pricePosition;
         /// The balance of Juice staked into this position. Long positions are negative, shorts are positive.
         int128 juiceBalance;
     }
@@ -51,7 +68,7 @@ contract JuiceStaking is
     struct AggregateSignal {
         uint128 totalVolume;
         int128 netSentiment;
-        /// the percentage of long positions in signal (`W_{longs}` in whitepaper)
+        /// the percentage of long positions in signal (`W_{longs}` in lite paper)
         uint128 totalLongSentiment;
         /// the sum of weighted net sentiments (i.e. the total sum of longTokenSignals.longTokenWeight)
         uint128 sumWeightedNetSentiment;
@@ -71,8 +88,7 @@ contract JuiceStaking is
     bytes32 public domainSeparatorV4;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {
-    }
+    constructor() initializer {}
 
     function initialize() public initializer {
         __ERC20_init("Vanilla Juice", "JUICE");
@@ -151,13 +167,66 @@ contract JuiceStaking is
     function latestPrice(address token)
         internal
         view
-        returns (uint256 price, bool priceFound)
+        returns (
+            OracleAnswer memory answer,
+            bool priceFound,
+            IPriceOracle oracle
+        )
     {
         IPriceOracle priceOracle = priceOracles[token];
         if (address(priceOracle) == address(0)) {
-            return (0, false);
+            return (OracleAnswer(0, 0, 0), false, priceOracle);
         }
-        return (uint256(priceOracle.latestAnswer()), true);
+        return (latestAnswer(priceOracle), true, priceOracle);
+    }
+
+    function getRoundData(IPriceOracle oracle, uint80 roundId)
+        internal
+        view
+        returns (OracleAnswer memory)
+    {
+        (, int256 answer, , uint256 updatedAt, ) = oracle.getRoundData(roundId);
+        return
+            OracleAnswer({
+                roundId: roundId,
+                price: uint256(answer),
+                timestamp: updatedAt
+            });
+    }
+
+    function stakeAmount(
+        IPriceOracle oracle,
+        OraclePosition memory pricePosition,
+        uint256 juiceStake,
+        OracleAnswer memory current
+    ) internal view returns (uint128) {
+        // only check for front-running if the priceoracle has updated after the position was opened
+        if (current.roundId > pricePosition.roundId) {
+            OracleAnswer memory priceAfter = getRoundData(
+                oracle,
+                pricePosition.roundId + 1
+            );
+            // if the position was opened in the same block (equal timestamps) but before the price change, let's use
+            // the price _after_ the position was opened to mitigate the front-running by tx reordering
+            if (priceAfter.timestamp == pricePosition.timestamp) {
+                return
+                    uint128(
+                        (juiceStake * INTERNAL_TOKEN_AMOUNT_MULTIPLIER) /
+                            priceAfter.price
+                    );
+            }
+            // otherwise, just proceed normally to computing the staked token amount using the price _before_ the position was opened
+        }
+
+        OracleAnswer memory priceBefore = getRoundData(
+            oracle,
+            pricePosition.roundId
+        );
+        return
+            uint128(
+                (juiceStake * INTERNAL_TOKEN_AMOUNT_MULTIPLIER) /
+                    priceBefore.price
+            );
     }
 
     /// @inheritdoc IJuiceStaking
@@ -173,25 +242,46 @@ contract JuiceStaking is
     {
         StakePosition memory stake = stakes[user].tokenStake[token];
         bool oracleFound;
+        IPriceOracle oracle;
+        OracleAnswer memory currentAnswer;
         // if stake position was opened before price oracle was removed, their value will equal the original stake
         // oracleFound is therefore checked before calculating the juiceValue for both long and short positions
-        (currentPrice, oracleFound) = latestPrice(token);
+        (currentAnswer, oracleFound, oracle) = latestPrice(token);
+        currentPrice = currentAnswer.price;
 
-        if (stake.amount == 0) {
+        if (stake.juiceBalance == 0) {
             // no stake for the token, return early
-            return (0, 0, currentPrice, false);
+            return (0, 0, currentAnswer.price, false);
         }
         sentiment = stake.juiceBalance < 0;
         if (sentiment) {
             juiceStake = uint256(int256(-stake.juiceBalance));
             juiceValue = oracleFound
-                ? computeJuiceValue(stake.amount, currentPrice)
+                ? computeJuiceValue(
+                    stakeAmount(
+                        oracle,
+                        stake.pricePosition,
+                        juiceStake,
+                        currentAnswer
+                    ),
+                    currentPrice
+                )
                 : juiceStake;
         } else {
             juiceStake = uint256(int256(stake.juiceBalance));
             if (oracleFound) {
                 int256 shortPositionValue = (2 * stake.juiceBalance) -
-                    int256(computeJuiceValue(stake.amount, currentPrice));
+                    int256(
+                        computeJuiceValue(
+                            stakeAmount(
+                                oracle,
+                                stake.pricePosition,
+                                juiceStake,
+                                currentAnswer
+                            ),
+                            currentPrice
+                        )
+                    );
                 if (shortPositionValue > 0) {
                     juiceValue = uint256(shortPositionValue);
                 } else {
@@ -387,6 +477,28 @@ contract JuiceStaking is
         }
     }
 
+    function latestAnswer(IPriceOracle priceOracle)
+        internal
+        view
+        returns (OracleAnswer memory)
+    {
+        (uint80 roundId, int256 answer, , uint256 timestamp, ) = priceOracle
+            .latestRoundData();
+        return OracleAnswer(roundId, uint256(answer), timestamp);
+    }
+
+    function asOraclePosition(OracleAnswer memory answer)
+        internal
+        view
+        returns (OraclePosition memory)
+    {
+        return
+            OraclePosition({
+                timestamp: uint64(block.timestamp),
+                roundId: uint64(answer.roundId)
+            });
+    }
+
     function addStake(
         StakingParam memory param,
         TokenSignal storage tokenSignal,
@@ -409,21 +521,17 @@ contract JuiceStaking is
         }
 
         stake.unstakedBalance -= param.amount;
-        uint256 tokenPrice = uint256(priceOracle.latestAnswer());
+        OracleAnswer memory answer = latestAnswer(priceOracle);
 
-        uint128 positionSize = uint128(
-            (uint256(param.amount) * INTERNAL_TOKEN_AMOUNT_MULTIPLIER) /
-                tokenPrice
-        );
         if (param.sentiment) {
             stake.tokenStake[param.token] = StakePosition({
-                amount: positionSize,
+                pricePosition: asOraclePosition(answer),
                 juiceBalance: -int128(int256(uint256(param.amount)))
             });
             tokenSignal.totalLongs += param.amount;
         } else {
             stake.tokenStake[param.token] = StakePosition({
-                amount: positionSize,
+                pricePosition: asOraclePosition(answer),
                 juiceBalance: int128(int256(uint256(param.amount)))
             });
             tokenSignal.totalShorts += param.amount;
@@ -432,7 +540,7 @@ contract JuiceStaking is
             staker,
             param.token,
             param.sentiment,
-            tokenPrice,
+            answer.price,
             -int128(int256(uint256(param.amount)))
         );
     }
@@ -465,7 +573,7 @@ contract JuiceStaking is
         IPriceOracle priceOracle = priceOracles[token];
         if (address(priceOracle) == address(0)) {
             storedStakes.tokenStake[token] = StakePosition({
-                amount: 0,
+                pricePosition: OraclePosition(0, 0),
                 juiceBalance: 0
             });
             if (currentJuiceBalance < 0) {
@@ -480,19 +588,34 @@ contract JuiceStaking is
             return 0;
         }
 
-        uint256 tokenPrice = uint256(priceOracle.latestAnswer());
-        uint256 positionValue = computeJuiceValue(
-            storedStakes.tokenStake[token].amount,
-            tokenPrice
-        );
-        uint256 juiceRefund = positionValue;
-        bool sentiment = currentJuiceBalance < 0;
-        if (sentiment) {
-            juiceSupplyDiff = int256(positionValue) + currentJuiceBalance;
-            tokenSignal.totalLongs -= uint128(
-                uint256(int256(-currentJuiceBalance))
+        OracleAnswer memory answer = latestAnswer(priceOracle);
+
+        uint256 juiceRefund;
+        if (currentJuiceBalance < 0) {
+            uint256 juiceAmount = uint256(int256(-currentJuiceBalance));
+            uint256 positionValue = computeJuiceValue(
+                stakeAmount(
+                    priceOracle,
+                    storedStakes.tokenStake[token].pricePosition,
+                    juiceAmount,
+                    answer
+                ),
+                answer.price
             );
+            juiceRefund = positionValue;
+            juiceSupplyDiff = int256(positionValue) + currentJuiceBalance;
+            tokenSignal.totalLongs -= uint128(juiceAmount);
         } else {
+            uint256 juiceAmount = uint256(int256(currentJuiceBalance));
+            uint256 positionValue = computeJuiceValue(
+                stakeAmount(
+                    priceOracle,
+                    storedStakes.tokenStake[token].pricePosition,
+                    juiceAmount,
+                    answer
+                ),
+                answer.price
+            );
             int256 shortPositionValue = (2 * currentJuiceBalance) -
                 int256(positionValue);
             if (shortPositionValue > 0) {
@@ -504,12 +627,10 @@ contract JuiceStaking is
                 juiceRefund = 0;
                 juiceSupplyDiff = -currentJuiceBalance;
             }
-            tokenSignal.totalShorts -= uint128(
-                uint256(int256(currentJuiceBalance))
-            );
+            tokenSignal.totalShorts -= uint128(juiceAmount);
         }
         storedStakes.tokenStake[token] = StakePosition({
-            amount: 0,
+            pricePosition: OraclePosition(0, 0),
             juiceBalance: 0
         });
         storedStakes.unstakedBalance += uint128(juiceRefund);
@@ -517,8 +638,8 @@ contract JuiceStaking is
         emit StakeRemoved(
             staker,
             token,
-            sentiment,
-            tokenPrice,
+            currentJuiceBalance < 0,
+            answer.price,
             int256(juiceRefund)
         );
     }
