@@ -29,11 +29,16 @@ contract JuiceStaking is
     /// used in StakePosition.amount calculations to retain good enough precision in intermediate price math
     uint256 private constant INTERNAL_TOKEN_AMOUNT_MULTIPLIER = 1e16;
 
+    /// this struct is used in contract storage, so it's been optimized to fit in uin128
     struct OraclePosition {
+        /// downcasted from the value range of block.timestamp, which overflows uint64 in distant enough future
         uint64 timestamp;
+        /// downcasted from the value range of uint80, but original value increments sequentially on every price update
+        /// in single oracle, so overflow is improbable
         uint64 roundId;
     }
 
+    /// this struct is memory-only so no need to optimize the layout
     struct OracleAnswer {
         uint80 roundId;
         uint256 price;
@@ -83,8 +88,7 @@ contract JuiceStaking is
     bytes32 public domainSeparatorV4;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {
-    }
+    constructor() initializer {}
 
     function initialize() public initializer {
         __ERC20_init("Vanilla Juice", "JUICE");
