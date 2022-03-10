@@ -29,7 +29,7 @@ contract JuiceStaking is
     /// used in StakePosition.amount calculations to retain good enough precision in intermediate price math
     uint256 private constant INTERNAL_TOKEN_AMOUNT_MULTIPLIER = 1e16;
 
-    /// this struct is used in contract storage, so it's been optimized to fit in uin128
+    /// this struct is used in contract storage, so it's been optimized to fit in uint128
     struct OraclePosition {
         /// downcasted from the value range of block.timestamp, which overflows uint64 in distant enough future
         uint64 timestamp;
@@ -68,7 +68,7 @@ contract JuiceStaking is
     struct AggregateSignal {
         uint128 totalVolume;
         int128 netSentiment;
-        /// the percentage of long positions in signal (`W_{longs}` in whitepaper)
+        /// the percentage of long positions in signal (`W_{longs}` in lite paper)
         uint128 totalLongSentiment;
         /// the sum of weighted net sentiments (i.e. the total sum of longTokenSignals.longTokenWeight)
         uint128 sumWeightedNetSentiment;
