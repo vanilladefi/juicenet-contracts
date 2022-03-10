@@ -559,6 +559,7 @@ describe("Staking", () => {
     })
 
     it("stakes in the same block with price change always get the changed price", async () => {
+      // helper function to extract the transaction ordering data
       const txOrder = async (tx: ContractTransaction) => {
         let { transactionIndex, blockNumber } = await tx.wait()
         return {
@@ -569,16 +570,17 @@ describe("Staking", () => {
       try {
         const oldPrice = 10 * (10 ** 8)
         const newPrice = 20 * (10 ** 8)
-        expect(await priceOracle.latestPrice()).to.equal(10 * (10 ** 8))
+        // just ensure that current price isn't equal to the new price
+        expect(await priceOracle.latestPrice()).to.equal(oldPrice)
         const firstStake = INIT_JUICE_SUPPLY / 4
 
-        // set automine off to make sure
+        // set automine off to control the tx ordering
         await ethers.provider.send("evm_setAutomine", [false])
         let openTx = await stakingContract.connect(user).modifyStakes([stake.long(firstStake)])
         let priceChangeTx = await priceOracle.setPrice(newPrice)
         await ethers.provider.send("evm_mine", [])
 
-        // make sure that staking tx happens before the price change tx
+        // make sure that staking tx happened before the price change tx
         let openReceipt = await txOrder(openTx)
         let priceChangeReceipt = await txOrder(priceChangeTx)
         expect(openReceipt.blockNumber).to.be.equal(priceChangeReceipt.blockNumber)
