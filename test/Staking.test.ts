@@ -31,11 +31,11 @@ const value = (p: BigNumberish) => BigInt(p.toString())
 const INIT_JUICE_SUPPLY = 2000000
 const TOKEN_DECIMALS = 8
 
+const createRandomEthereumAddress = () => ethers.utils.getAddress(ethers.utils.hexZeroPad("0x" + randomBytes(20).toString("hex"), 20))
 const initializeJuicenet = async ([deployer, a, b, noDeposit, withDeposit]: Wallet[]) => {
   let stakingContractImpl = await ethers.getContractFactory("MockJuiceStaking", deployer)
   let stakingContract = await upgrades.deployProxy(stakingContractImpl, { kind: "uups" }) as MockJuiceStaking
 
-  const createRandomEthereumAddress = () => ethers.utils.getAddress(ethers.utils.hexZeroPad("0x" + randomBytes(20).toString("hex"), 20))
   let tokens = [...Array(3)].map(createRandomEthereumAddress)
   let tokenWithoutPriceOracle = createRandomEthereumAddress()
 
@@ -732,8 +732,9 @@ describe("Staking", () => {
     let oracle1: string, oracle2: string, oracle3: string
     let nonOwner: Wallet, arbitrary: Wallet
     let zero_address = "0x0000000000000000000000000000000000000000"
+    let tokenWithoutPriceOracle: string
     beforeEach(async () => {
-      ({ stakingContract, oracles, tokens, accounts: [nonOwner, arbitrary] } = await loadFixture(initializeJuicenet));
+      ({ stakingContract, oracles, tokens, tokenWithoutPriceOracle, accounts: [nonOwner, arbitrary] } = await loadFixture(initializeJuicenet));
       ([token1, token2, token3] = tokens);
       ([oracle1, oracle2, oracle3] = oracles.map(x => x.address))
     })
@@ -771,6 +772,32 @@ describe("Staking", () => {
         expect(await stakingContract.getPriceOracle(token2)).to.equal(oracle2)
         expect(await stakingContract.getPriceOracle(token3)).to.equal(zero_address)
       })
+      it("changes oracle on re-register", async () => {
+        let [{ token, oracle: previousOracle }] = await stakingContract.getRegisteredTokensAndOracles()
+        expect(previousOracle).to.not.equal(oracle2)
+        await stakingContract.updatePriceOracles([token], [oracle2])
+        let [{ token: newToken, oracle }] = await stakingContract.getRegisteredTokensAndOracles()
+        expect(newToken).to.equal(token)
+        expect(oracle).to.equal(oracle2)
+      })
+      it("does nothing when re-registering same token-oracle pair", async () => {
+        let expected = await stakingContract.getRegisteredTokensAndOracles()
+        let [{ token: expectedToken, oracle: expectedOracle }] = expected
+
+        await stakingContract.updatePriceOracles([expectedToken], [expectedOracle])
+
+        let actual = await stakingContract.getRegisteredTokensAndOracles()
+        expect(actual.length).to.equal(expected.length)
+        expect(actual[0].token).to.equal(expectedToken)
+        expect(actual[0].oracle).to.equal(expectedOracle)
+      })
+
+      it("does nothing when removing a non-existent token", async () => {
+        let expected = await stakingContract.getRegisteredTokensAndOracles()
+        await stakingContract.updatePriceOracles([tokenWithoutPriceOracle], [ethers.constants.AddressZero])
+        expect(await stakingContract.getRegisteredTokensAndOracles()).to.eql(expected)
+      })
+
       it("fails when input array lengths mismatch", async () => {
         await expect(stakingContract.updatePriceOracles([token1], [oracle1, oracle2])).to.revertedWith("TokenOracleMismatch(1, 2)")
         await expect(stakingContract.updatePriceOracles([token1, token2], [oracle1])).to.revertedWith("TokenOracleMismatch(2, 1)")
