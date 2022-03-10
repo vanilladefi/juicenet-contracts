@@ -16,6 +16,11 @@ contract MockPriceOracle is IPriceOracle {
         return 8;
     }
 
+    function latestPrice() external view returns (int256) {
+        MockRound memory round = rounds[rounds.length - 1];
+        return round.price;
+    }
+
     function setPrice(int256 newPrice) external {
         rounds.push(MockRound({ price: newPrice, timestamp: block.timestamp }));
     }

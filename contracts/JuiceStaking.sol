@@ -190,21 +190,24 @@ contract JuiceStaking is
         uint256 juiceStake,
         OracleAnswer memory current
     ) internal view returns (uint128) {
+        // only check for front-running if the priceoracle has updated after the position was opened
         if (current.roundId > pricePosition.roundId) {
             OracleAnswer memory priceAfter = getRoundData(
                 oracle,
                 pricePosition.roundId + 1
             );
-            if (priceAfter.timestamp < pricePosition.timestamp + 60) {
-                // the position was opened one minute before the oracle price change tx, so let's use the priceAfter to
-                // mitigate the most blatant front-running
+            // if the position was opened in the same block (equal timestamps) but before the price change, let's use
+            // the price _after_ the position was opened to mitigate the front-running by tx reordering
+            if (priceAfter.timestamp == pricePosition.timestamp) {
                 return
                     uint128(
                         (juiceStake * INTERNAL_TOKEN_AMOUNT_MULTIPLIER) /
                             priceAfter.price
                     );
             }
+            // otherwise, just proceed normally to computing the staked token amount using the price _before_ the position was opened
         }
+
         OracleAnswer memory priceBefore = getRoundData(
             oracle,
             pricePosition.roundId

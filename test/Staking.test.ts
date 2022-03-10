@@ -26,8 +26,8 @@ const { provider: networkProvider } = ethers
 const loadFixture = createFixtureLoader(provider.getWallets(), provider)
 
 const value = (p: BigNumberish) => BigInt(p.toString())
-const INIT_JUICE_SUPPLY = 2000000;
-const TOKEN_DECIMALS = 8;
+const INIT_JUICE_SUPPLY = 2000000
+const TOKEN_DECIMALS = 8
 
 const initializeJuicenet = async ([deployer, a, b, noDeposit, withDeposit]: Wallet[]) => {
   let stakingContractImpl = await ethers.getContractFactory("MockJuiceStaking", deployer)
@@ -91,7 +91,7 @@ describe("Staking", () => {
     })
 
     it("transfer() ok", async () => {
-      const transferAmount = INIT_JUICE_SUPPLY / 4;
+      const transferAmount = INIT_JUICE_SUPPLY / 4
       await expect(() => erc20.connect(withJuice).transfer(noJuice.address, transferAmount)).to.changeTokenBalances(
         erc20,
         [withJuice, noJuice],
@@ -554,10 +554,47 @@ describe("Staking", () => {
       expect(longTokens.map(x => x.weight.toNumber())).to.eql([25, 8])
     })
 
+    it("stakes in the same block with price change always get the changed price", async () => {
+      const txOrder = async (tx: ContractTransaction) => {
+        let { transactionIndex, blockNumber } = await tx.wait()
+        return {
+          transactionIndex, blockNumber,
+        }
+      }
+      let [priceOracle] = oracles
+      try {
+        const oldPrice = 10 * (10 ** 8)
+        const newPrice = 20 * (10 ** 8)
+        expect(await priceOracle.latestPrice()).to.equal(10 * (10 ** 8))
+        const firstStake = INIT_JUICE_SUPPLY / 4
+
+        // set automine off to make sure
+        await ethers.provider.send("evm_setAutomine", [false])
+        let openTx = await stakingContract.connect(user).modifyStakes([stake.long(firstStake)])
+        let priceChangeTx = await priceOracle.setPrice(newPrice)
+        await ethers.provider.send("evm_mine", [])
+
+        // make sure that staking tx happens before the price change tx
+        let openReceipt = await txOrder(openTx)
+        let priceChangeReceipt = await txOrder(priceChangeTx)
+        expect(openReceipt.blockNumber).to.be.equal(priceChangeReceipt.blockNumber)
+        expect(openReceipt.transactionIndex).to.be.lessThan(priceChangeReceipt.transactionIndex)
+
+        expect(await currentStake(user.address, token1)).to.include({ juiceStake: firstStake, juiceValue: firstStake, currentPrice: newPrice, sentiment: true })
+
+        let closeTx = await stakingContract.connect(user).modifyStakes([stake.long(0)])
+        await ethers.provider.send("evm_mine", [])
+        await expect(closeTx).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token1, true, newPrice, firstStake)
+      } finally {
+        await ethers.provider.send("evm_setAutomine", [true])
+      }
+    })
+
     it("adding second stake removes the first", async () => {
       let [priceOracle] = oracles
       let price = 314252688830
-      const firstStake = INIT_JUICE_SUPPLY / 4, secondStake = INIT_JUICE_SUPPLY / 2
+      const firstStake = INIT_JUICE_SUPPLY / 4
+      const secondStake = INIT_JUICE_SUPPLY / 2
       await priceOracle.setPrice(price)
       {
         let tx = stakingContract.connect(user).modifyStakes([stake.long(firstStake)])
@@ -579,7 +616,7 @@ describe("Staking", () => {
     it("adding second stake removes the first also in shorts", async () => {
       let [priceOracle] = oracles
       let price = 314252688830
-      const firstStake = INIT_JUICE_SUPPLY / 4, secondStake = INIT_JUICE_SUPPLY / 2
+      const firstStake = INIT_JUICE_SUPPLY / 4; const secondStake = INIT_JUICE_SUPPLY / 2
       await priceOracle.setPrice(price)
       {
         let tx = stakingContract.connect(user).modifyStakes([stake.short(firstStake)])
@@ -633,7 +670,7 @@ describe("Staking", () => {
     it("refunds the original amount when closing a stake after price oracle has been removed", async () => {
       let [priceOracle] = oracles
       let price = 314252688830
-      const depositAmount = INIT_JUICE_SUPPLY / 8, user1Stake = 500000, user2Stake = 250000
+      const depositAmount = INIT_JUICE_SUPPLY / 8; const user1Stake = 500000; const user2Stake = 250000
       await stakingContract.connect(user2).deposit(depositAmount)
       await priceOracle.setPrice(price)
       let [expectedUser1Balance, expectedUser2Balance] = await Promise.all([
