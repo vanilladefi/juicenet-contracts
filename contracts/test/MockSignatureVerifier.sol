@@ -7,10 +7,10 @@ import "@openzeppelin/contracts-upgradeable/interfaces/IERC1271Upgradeable.sol";
 contract MockSignatureVerifier is IERC1271Upgradeable {
     bool private mockIsValid = true;
 
-    function isValidSignature(bytes32 hash, bytes memory signature)
+    function isValidSignature(bytes32, bytes memory)
         external
         view
-        returns (bytes4 magicValue)
+        returns (bytes4)
     {
         if (mockIsValid) {
             return IERC1271Upgradeable.isValidSignature.selector; // valid
