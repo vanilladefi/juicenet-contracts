@@ -7,6 +7,7 @@ import { IERC20Upgradeable__factory } from "../typechain/juicenet"
 import { SafelistedToken, VanillaTradingSafelist } from "./airdrop-utils/VanillaTradingSafelist"
 import { OVERRIDES, ProviderAPI, SNAPSHOT_BLOCK, USDC, VNL, WETH } from "./airdrop-utils"
 import { Provider } from "@ethersproject/providers"
+import { readFile, writeFile } from "fs/promises"
 
 type IndexableEvent = Event | {blockNumber: number, logIndex: number}
 let byBlockIndexOrder = (a: IndexableEvent, b: IndexableEvent) => a.blockNumber - b.blockNumber || a.logIndex - b.logIndex
@@ -196,15 +197,15 @@ const step3 = async (provider: Provider) => {
 export default async (_: never, { ethers, network }: HardhatRuntimeEnvironment): Promise<void> => {
   let { fetchUniswapPool, VNLRouter, NonfungiblePositionManager, Quoter, findNFTMintEvents } = ProviderAPI(ethers.provider)
 
-  console.log("Step 1")
+  console.log("Step 1: direct VNL balance")
   let directHodlers: SnapshotState = await step1(ethers.provider)
   console.table(directHodlers.accounts)
 
-  console.log("Step 2")
+  console.log("Step 2: LP's share in the Uniswap")
   let liquidityProviders: SnapshotState = await step2(ethers.provider)
   console.table(liquidityProviders.accounts)
 
-  console.log("Step 3")
+  console.log("Step 3: Unrealized VNL in open Vanilla positions")
   let profitMiners: SnapshotState = await step3(ethers.provider)
   console.table(profitMiners.accounts)
 
@@ -228,21 +229,30 @@ export default async (_: never, { ethers, network }: HardhatRuntimeEnvironment):
       user: user.substring(0, 6) + "..." + user.substring(38),
       eoa,
       eligible,
-      s1: new Decimal(s1.toString()).div(10 ** 12).toDecimalPlaces(4),
-      s2: new Decimal(s2.toString()).div(10 ** 12).toDecimalPlaces(4),
-      s3: new Decimal(s3.toString()).div(10 ** 12).toDecimalPlaces(4),
-      total: new Decimal(total.toString()).div(10 ** 12).toDecimalPlaces(4),
+      s1: new Decimal(s1.toString()).div(10 ** 12).toFixed(4),
+      s2: new Decimal(s2.toString()).div(10 ** 12).toFixed(4),
+      s3: new Decimal(s3.toString()).div(10 ** 12).toFixed(4),
+      total: new Decimal(total.toString()).div(10 ** 12).toFixed(8),
     }
   }
 
-  console.table(allUsers.sort((a, b) => Number(a.total - b.total)).map(prettierOutput))
+  console.table(allUsers.sort((a, b) => Number(b.total - a.total)).map(prettierOutput))
   let totalJUICE = allUsers.filter(({ eligible }) => eligible).reduce((sum, val) => { sum += val.total; return sum }, 0n)
   console.log("Total VNL supply", await IERC20Upgradeable__factory.connect(VNL_ADDRESS, ethers.provider).totalSupply(OVERRIDES).then(bn => new Decimal(bn.toString()).div(10 ** 12).toDecimalPlaces(4)))
-  console.log("Total amount of airdropped JUICE", new Decimal(totalJUICE.toString()).div(10 ** 12).toDecimalPlaces(4))
-  // await writeFile("premine.json", JSON.stringify(newHolders,
-  //   (key, value) => typeof value === "bigint" ? value.toString() : value,
-  //   4), "utf8")
-  // console.log("Step 1")
-  // console.table(newHolders)
-  // console.log(`Block ${data.blockNumber}, holder count ${Object.keys(data.accounts).length}, wrote to premine.json`)
+  console.log("Total amount of airdropped JUICE", new Decimal(totalJUICE.toString()).div(10 ** 12).toDecimalPlaces(8))
+
+  type EthereumAddress = string
+  let mapping: Record<EthereumAddress, string> = JSON.parse(await readFile("contracts.json", "utf8"))
+
+  let finalRecipients = allUsers.filter(x => x.eligible).map((x) => {
+    if (!x.eoa && mapping[x.user] === undefined) {
+      throw new Error(`Contract address ${x.user} not mapped in contracts.json`)
+    }
+    let user = x.eoa ? x.user : mapping[x.user]
+    return { user, total: x.total / (10n ** 4n) }
+  }).filter(x => ethers.utils.isAddress(x.user))
+
+  await writeFile("premine.json", JSON.stringify(finalRecipients,
+    (key, value) => typeof value === "bigint" ? value.toString() : value,
+    4), "utf8")
 }
