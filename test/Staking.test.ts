@@ -5,7 +5,7 @@ import chaiAsPromised from "chai-as-promised"
 import {
   IPriceOracle__factory,
   JuiceStaking,
-  JuiceStaking__factory, MockJuiceStaking, MockJuiceStakingUpgrade,
+  JuiceStaking__factory, MockJuiceStaking, MockJuiceStaking__factory, MockJuiceStakingUpgrade,
   MockPriceOracle,
   MockPriceOracle__factory,
   MockSignalAggregator,
@@ -19,6 +19,7 @@ import { BigNumber, BigNumberish, Contract, ContractTransaction, Wallet } from "
 import { deployMockContract, solidity } from "ethereum-waffle"
 import { randomBytes } from "crypto"
 import { SigningHelper } from "./Signing.util"
+import { ERC1967Proxy__factory } from "../typechain/openzeppelin"
 
 use(solidity)
 use(chaiAsPromised)
@@ -31,10 +32,17 @@ const value = (p: BigNumberish) => BigInt(p.toString())
 const INIT_JUICE_SUPPLY = 2000000
 const TOKEN_DECIMALS = 8
 
+const deployProxy = async (deployer: Wallet) => {
+  let mockJuiceStakingFactory = new MockJuiceStaking__factory(deployer)
+  let stakingLogic = await mockJuiceStakingFactory.deploy()
+  let initializerData = stakingLogic.interface.encodeFunctionData("initialize")
+  let proxy = await new ERC1967Proxy__factory(deployer).deploy(stakingLogic.address, initializerData)
+  return mockJuiceStakingFactory.attach(proxy.address)
+}
+
 const createRandomEthereumAddress = () => ethers.utils.getAddress(ethers.utils.hexZeroPad("0x" + randomBytes(20).toString("hex"), 20))
 const initializeJuicenet = async ([deployer, a, b, noDeposit, withDeposit]: Wallet[]) => {
-  let stakingContractImpl = await ethers.getContractFactory("MockJuiceStaking", deployer)
-  let stakingContract = await upgrades.deployProxy(stakingContractImpl, { kind: "uups" }) as MockJuiceStaking
+  let stakingContract = await deployProxy(deployer)
 
   let tokens = [...Array(3)].map(createRandomEthereumAddress)
   let tokenWithoutPriceOracle = createRandomEthereumAddress()
@@ -952,7 +960,6 @@ describe("Staking", () => {
       ({ stakingContract, signatureVerifier, users: { noDeposit: user } } = await loadFixture(initializeJuicenet))
       helper = SigningHelper(ethers.provider, stakingContract)
       stakingContract = stakingContract.connect(deployer)
-      signatureVerifier = signatureVerifier
     })
 
     it("makes single deposit", async () => {

@@ -3,7 +3,7 @@ import { BigNumber, constants, Event } from "ethers"
 
 import { FeeAmount, Pool, Position } from "@uniswap/v3-sdk"
 import Decimal from "decimal.js"
-import { IERC20Upgradeable__factory } from "../typechain/juicenet"
+import { IERC20__factory } from "../typechain/openzeppelin"
 import { SafelistedToken, VanillaTradingSafelist } from "./airdrop-utils/VanillaTradingSafelist"
 import { OVERRIDES, ProviderAPI, SNAPSHOT_BLOCK, USDC, VNL, WETH } from "./airdrop-utils"
 import { Provider } from "@ethersproject/providers"
@@ -20,8 +20,7 @@ type SnapshotState = {
 
 // resolve all addresses who are directly holding VNL
 const step1 = async (provider: Provider) => {
-  // technically, VanillaV1Token02 contract is not IERC20Upgradeable, but it doesn't matter here since all we need are the Transfer events
-  let vnlToken02 = IERC20Upgradeable__factory.connect(VNL_ADDRESS, provider)
+  let vnlToken02 = IERC20__factory.connect(VNL_ADDRESS, provider)
 
   // let usdcVNLBalance = new Decimal((await vnlToken02.balanceOf(usdcVNL.poolContract.address, OVERRIDES)).toString()).div(10 ** 12)
   // console.log("VNL balance of USDC-pool", usdcVNLBalance.toString(), `(diff to aggregate LP sum: ${usdcVNLBalance.sub(sumUSDCVNL).toFixed(12)} VNL)`)
