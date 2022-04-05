@@ -11,6 +11,7 @@ export default async (_: never, hre: HardhatRuntimeEnvironment): Promise<void> =
   let { address } = await get("JuiceStaking")
 
   const { deployer } = await getNamedAccounts()
+
   let signer = await ethers.getSigner(deployer)
 
   let stakingContract = JuiceStaking__factory.connect(address, signer)

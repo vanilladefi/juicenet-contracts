@@ -180,9 +180,7 @@ const step3 = async (provider: Provider) => {
   return snapshot
 }
 
-export default async (_: never, { ethers, network }: HardhatRuntimeEnvironment): Promise<void> => {
-  let { fetchUniswapPool, VNLRouter, NonfungiblePositionManager, Quoter, findNFTMintEvents } = ProviderAPI(ethers.provider)
-
+export default async (_: never, { ethers }: HardhatRuntimeEnvironment): Promise<void> => {
   console.log("Step 1: direct VNL balance")
   let directHodlers: SnapshotState = await step1(ethers.provider)
   console.table(directHodlers.accounts)
