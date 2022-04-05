@@ -18,14 +18,11 @@ type SnapshotState = {
   accounts: Record<string, bigint>
 }
 
+// following the steps described in https://community.vanilladefi.com/t/proposal-vanilla-mainnet-juice-airdrop-addresses/62
+
 // resolve all addresses who are directly holding VNL
 const step1 = async (provider: Provider) => {
   let vnlToken02 = IERC20__factory.connect(VNL_ADDRESS, provider)
-
-  // let usdcVNLBalance = new Decimal((await vnlToken02.balanceOf(usdcVNL.poolContract.address, OVERRIDES)).toString()).div(10 ** 12)
-  // console.log("VNL balance of USDC-pool", usdcVNLBalance.toString(), `(diff to aggregate LP sum: ${usdcVNLBalance.sub(sumUSDCVNL).toFixed(12)} VNL)`)
-  // let wethVNLBalance = new Decimal((await vnlToken02.balanceOf(wethVNL.poolContract.address, OVERRIDES)).toString()).div(10 ** 12)
-  // console.log("VNL balance of WETH-pool", wethVNLBalance.toString(), `(diff to aggregate LP sum: ${wethVNLBalance.sub(sumWETHVNL).toFixed(12)} VNL)`)
 
   const tokenTransfers = await vnlToken02.queryFilter(vnlToken02.filters.Transfer(null, null, null), 0, SNAPSHOT_BLOCK)
 
@@ -55,15 +52,9 @@ const step1 = async (provider: Provider) => {
 
   let data: SnapshotState = transfers.reduce(toSnapshotState, { blockNumber: 0, accounts: {} })
   return data
-  // type HolderData = {amount: bigint, contract: boolean}
-  // type Holder = [string, HolderData]
-  // let holders: Holder[] = await Promise.all(Object.entries(data.accounts)
-  //   .map(([address, amount]) => provider.getCode(address).then((code): Holder => ([address, { amount, contract: code !== "0x" }]))))
-  //
-  // let newHolders: {receiver: string, amount: bigint}[] = holders
-  //   .map(([address, data]) => ({ receiver: address, amount: data.amount }))
 }
 
+// Resolve all addresses providing liquidity for VNL and resolve their pro rata VNL ownership in each liquidity pool.
 const step2 = async (provider: Provider) => {
   let { fetchUniswapPool, NonfungiblePositionManager, findNFTMintEvents } = ProviderAPI(provider)
 
@@ -121,11 +112,9 @@ const step2 = async (provider: Provider) => {
     return state
   }
   return [...usdcLPs, ...wethLPs].reduce(toSnapshotState, { blockNumber: SNAPSHOT_BLOCK, accounts: {} })
-
-  // let sumUSDCVNL = usdcLPs.reduce((sum, pos) => { return sum.add(pos.vnlTotal) }, new Decimal(0))
-  // let sumWETHVNL = wethLPs.reduce((sum, pos) => { return sum.add(pos.vnlTotal) }, new Decimal(0))
 }
 
+// Resolve all addresses that profit-mine, and calculate how much VNL they would get if they closed their positions at the snapshot block.
 const step3 = async (provider: Provider) => {
   let { VNLRouter, Quoter } = ProviderAPI(provider)
 
@@ -133,8 +122,6 @@ const step3 = async (provider: Provider) => {
     VNLRouter.queryFilter(VNLRouter.filters.TokensPurchased(), 0, SNAPSHOT_BLOCK),
     VNLRouter.queryFilter(VNLRouter.filters.TokensSold(), 0, SNAPSHOT_BLOCK)])
 
-  // "event TokensSold( address indexed seller, address indexed token, uint256 amount, uint256 eth, uint256 profit, uint256 reward )",
-  //   "event TokensPurchased( address indexed buyer, address indexed token, uint256 eth, uint256 amount )",
   type Trade = {blockNumber: number, logIndex: number, owner: string, token: string, amount: BigNumber}
   let trades: Trade[] = [
     ...openings.map(({ blockNumber, logIndex, args }) => ({ blockNumber, logIndex, owner: args?.buyer, token: args?.token, amount: args?.amount })),
@@ -237,19 +224,33 @@ export default async (_: never, { ethers, network }: HardhatRuntimeEnvironment):
 
   console.table(allUsers.sort((a, b) => Number(b.total - a.total)).map(prettierOutput))
   let totalJUICE = allUsers.filter(({ eligible }) => eligible).reduce((sum, val) => { sum += val.total; return sum }, 0n)
-  console.log("Total VNL supply", await IERC20Upgradeable__factory.connect(VNL_ADDRESS, ethers.provider).totalSupply(OVERRIDES).then(bn => new Decimal(bn.toString()).div(10 ** 12).toDecimalPlaces(4)))
+  console.log("Total VNL supply", await IERC20__factory.connect(VNL_ADDRESS, ethers.provider).totalSupply(OVERRIDES).then(bn => new Decimal(bn.toString()).div(10 ** 12).toDecimalPlaces(4)))
   console.log("Total amount of airdropped JUICE", new Decimal(totalJUICE.toString()).div(10 ** 12).toDecimalPlaces(8))
 
   type EthereumAddress = string
   let mapping: Record<EthereumAddress, string> = JSON.parse(await readFile("contracts.json", "utf8"))
 
-  let finalRecipients = allUsers.filter(x => x.eligible).map((x) => {
-    if (!x.eoa && mapping[x.user] === undefined) {
-      throw new Error(`Contract address ${x.user} not mapped in contracts.json`)
-    }
-    let user = x.eoa ? x.user : mapping[x.user]
-    return { user, total: x.total / (10n ** 4n) }
-  }).filter(x => ethers.utils.isAddress(x.user))
+  console.log("Step 4: resolve all contract addresses that either hold VNL directly or provide liquidity or profit-mine and map them to Polygon addresses")
+  console.table(mapping)
+
+  let allRecipients = allUsers
+    .filter(x => x.eligible)
+    .map((x) => {
+      // make sure that all non-EOAs are included in the contracts.json (even if we don't know the mapped address)
+      if (!x.eoa && mapping[x.user] === undefined) {
+        throw new Error(`Contract address ${x.user} not mapped in contracts.json`)
+      }
+      let user = x.eoa ? x.user : mapping[x.user]
+      return { user, total: x.total }
+    })
+    .filter(x => ethers.utils.isAddress(x.user)) // we exclude the contract address mappings that are not known (empty strings in contracts.json)
+
+  // finally, make sure that recipient get right JUICE amounts (as JUICE has 8 decimals but VNL has 12)
+  let finalRecipients = allRecipients
+    .map(({ user, total }) => ({
+      user,
+      total: total / (10n ** 4n),
+    }))
 
   await writeFile("premine.json", JSON.stringify(finalRecipients,
     (key, value) => typeof value === "bigint" ? value.toString() : value,
