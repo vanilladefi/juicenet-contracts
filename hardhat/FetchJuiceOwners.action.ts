@@ -250,7 +250,7 @@ export default async (_: never, { ethers }: HardhatRuntimeEnvironment): Promise<
       total: total / (10n ** 4n),
     }))
 
-  await writeFile("premine.json", JSON.stringify(finalRecipients,
+  await writeFile("airdrop.json", JSON.stringify(finalRecipients,
     (key, value) => typeof value === "bigint" ? value.toString() : value,
     4), "utf8")
 }
