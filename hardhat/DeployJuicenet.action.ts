@@ -1,5 +1,5 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
-import { JuiceStaking__factory, MockJuiceStaking__factory } from "../typechain/juicenet"
+import { JuiceStaking__factory } from "../typechain/juicenet"
 import { SafeLedgerSigner } from "./SignerUtil"
 import { ERC1967Proxy__factory } from "../typechain/openzeppelin"
 
@@ -13,9 +13,9 @@ export default async ({ logic: logicAddress }: Arguments, hre: HardhatRuntimeEnv
   let signer = await SafeLedgerSigner(ethers, network)
   if (!logicAddress) {
     console.log("Deploying the logic contract")
-    let mockJuiceStakingFactory = new MockJuiceStaking__factory(signer)
+    let juiceStakingFactory = new JuiceStaking__factory(signer)
     console.log("Deploying logic contract")
-    let stakingLogic = await mockJuiceStakingFactory.deploy()
+    let stakingLogic = await juiceStakingFactory.deploy()
 
     console.log("Logic contract enqueued", stakingLogic.deployTransaction)
     console.log("Go check block scanner for real address, and re-execute this task with the address as '--logic' param")
