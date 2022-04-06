@@ -90,7 +90,12 @@ networks.hardhat = {
 }
 const hardhatConfig: HardhatUserConfig = {
   etherscan: {
-    apiKey: process.env.ETHERSCAN_APIKEY,
+    apiKey: {
+      mainnet: process.env.ETHERSCAN_APIKEY,
+      rinkeby: process.env.ETHERSCAN_APIKEY,
+      polygon: process.env.POLYGONSCAN_APIKEY,
+      polygonMumbai: process.env.POLYGONSCAN_APIKEY,
+    },
   },
   typechain: {
     outDir: "typechain/juicenet",
