@@ -1,16 +1,18 @@
 /* eslint-disable camelcase */
-import { Networks, SupportedNetwork } from "./network.config"
-import { HardhatUserConfig } from "hardhat/config"
-
 import "@nomiclabs/hardhat-ethers"
+import "@nomiclabs/hardhat-etherscan"
 import "@nomiclabs/hardhat-waffle"
+import "@openzeppelin/hardhat-upgrades"
+import "@typechain/hardhat"
 import "hardhat-deploy"
 import "hardhat-deploy-ethers"
-import "@typechain/hardhat"
+import { HardhatUserConfig } from "hardhat/config"
+import {
+  HardhatNetworkAccountsUserConfig,
+  NetworksUserConfig,
+} from "hardhat/types"
 import "solidity-coverage"
-import "@nomiclabs/hardhat-etherscan"
-import "@openzeppelin/hardhat-upgrades"
-import { HardhatNetworkAccountsUserConfig, NetworksUserConfig, NetworkUserConfig } from "hardhat/types"
+import { Networks, SupportedNetwork } from "./network.config"
 
 let networks: NetworksUserConfig = {
   mainnet: {
@@ -66,7 +68,10 @@ if (forkId) {
   isFork = true
   forkingURL = Networks[forkId].providerURL
   localChainId = networks[forkId]?.chainId || HARDHAT_NETWORK_ID
-  forkAccounts = (Networks[forkId].privateKeys || []).map(pk => ({ privateKey: pk, balance: BigInt(10_000_000_000_000_000_000_000n).toString() }))
+  forkAccounts = (Networks[forkId].privateKeys || []).map((pk) => ({
+    privateKey: pk,
+    balance: BigInt(10_000_000_000_000_000_000_000n).toString(),
+  }))
 }
 networks.localhost = {
   chainId: localChainId,
@@ -82,6 +87,14 @@ networks.hardhat = {
     enabled: isFork,
     url: forkingURL || "",
   },
+  chains: {
+    [localChainId]: {
+      hardforkHistory: {
+        arrowGlacier: 24925931,
+      },
+    },
+  },
+
   chainId: localChainId,
   live: false,
   saveDeployments: true,
