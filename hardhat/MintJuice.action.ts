@@ -8,9 +8,8 @@ export default async (_: never, hre: HardhatRuntimeEnvironment): Promise<void> =
   const { get } = deployments
 
   type Mint = {user: string, total: bigint}
-  let preMine: Mint[] = JSON.parse(await readFile("airdrop.json", "utf8")).map(({ user, total }: {user: string, total: string}) => ({ user, total: BigInt(total) }))
+  let preMine: Mint[] = JSON.parse(await readFile(`deployments/${network.name}/JUICE-airdrop.json`, "utf8")).map(({ user, total }: {user: string, total: string}) => ({ user, total: BigInt(total) }))
   let { address } = await get("JuiceStaking")
-
   const { deployer } = await getNamedAccounts()
 
   let signer = await SafeLedgerSigner(ethers, network)
@@ -21,8 +20,8 @@ export default async (_: never, hre: HardhatRuntimeEnvironment): Promise<void> =
   console.log("Premining JUICE to following receivers")
   console.table(preMine)
 
-  // let pendingTx = await stakingContract.mintJuice(preMine.map(x => x.user), preMine.map(x => x.total))
-  // let receipt = await pendingTx.wait()
-  // console.log(`Juices minted in #${receipt.blockNumber}`)
-  // console.log(`Gas usage: ${receipt.gasUsed}`)
+  let pendingTx = await stakingContract.mintJuice(preMine.map(x => x.user), preMine.map(x => x.total))
+  let receipt = await pendingTx.wait()
+  console.log(`Juices minted in #${receipt.blockNumber}`)
+  console.log(`Gas usage: ${receipt.gasUsed}`)
 }

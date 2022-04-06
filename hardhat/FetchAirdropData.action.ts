@@ -180,7 +180,15 @@ const step3 = async (provider: Provider) => {
   return snapshot
 }
 
-export default async (_: never, { ethers }: HardhatRuntimeEnvironment): Promise<void> => {
+type Arguments = { to: string }
+export default async ({ to }: Arguments, { ethers, network }: HardhatRuntimeEnvironment): Promise<void> => {
+  if (!to) {
+    throw new Error("Please set `--to` as the target network")
+  }
+  // read the files first to fail faster
+  type EthereumAddress = string
+  let mapping: Record<EthereumAddress, string> = JSON.parse(await readFile(`deployments/${to}/airdrop-contracts.json`, "utf8"))
+
   console.log("Step 1: direct VNL balance")
   let directHodlers: SnapshotState = await step1(ethers.provider)
   console.table(directHodlers.accounts)
@@ -225,9 +233,6 @@ export default async (_: never, { ethers }: HardhatRuntimeEnvironment): Promise<
   console.log("Total VNL supply", await IERC20__factory.connect(VNL_ADDRESS, ethers.provider).totalSupply(OVERRIDES).then(bn => new Decimal(bn.toString()).div(10 ** 12).toDecimalPlaces(4)))
   console.log("Total amount of airdropped JUICE", new Decimal(totalJUICE.toString()).div(10 ** 12).toDecimalPlaces(8))
 
-  type EthereumAddress = string
-  let mapping: Record<EthereumAddress, string> = JSON.parse(await readFile("contracts.json", "utf8"))
-
   console.log("Step 4: resolve all contract addresses that either hold VNL directly or provide liquidity or profit-mine and map them to Polygon addresses")
   console.table(mapping)
 
@@ -236,7 +241,7 @@ export default async (_: never, { ethers }: HardhatRuntimeEnvironment): Promise<
     .map((x) => {
       // make sure that all non-EOAs are included in the contracts.json (even if we don't know the mapped address)
       if (!x.eoa && mapping[x.user] === undefined) {
-        throw new Error(`Contract address ${x.user} not mapped in contracts.json`)
+        throw new Error(`Contract address ${x.user} not mapped in deployments/${to}/contracts.json`)
       }
       let user = x.eoa ? x.user : mapping[x.user]
       return { user, total: x.total }
@@ -250,7 +255,7 @@ export default async (_: never, { ethers }: HardhatRuntimeEnvironment): Promise<
       total: total / (10n ** 4n),
     }))
 
-  await writeFile("airdrop.json", JSON.stringify(finalRecipients,
+  await writeFile(`deployments/${to}/JUICE-airdrop.json`, JSON.stringify(finalRecipients,
     (key, value) => typeof value === "bigint" ? value.toString() : value,
     4), "utf8")
 }

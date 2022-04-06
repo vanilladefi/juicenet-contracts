@@ -1,0 +1,1058 @@
+[
+    {
+        "user": "0x0f0172255e057B40c56683F6261195b9e73cfA71",
+        "total": "263088591690934"
+    },
+    {
+        "user": "0x1b9cd9FecEf778301d7D631d8009Fe858F064bAB",
+        "total": "188534118873777"
+    },
+    {
+        "user": "0xd35D54Ba343e4027Fd57659fC300D94A8Ec1e691",
+        "total": "158418349461665"
+    },
+    {
+        "user": "0x5b357f778259C6F138e1eF316E87913b1B31f29A",
+        "total": "107462141546905"
+    },
+    {
+        "user": "0x96Ee9F219C7cafC4be6A0780479A62E8A9eB8BCf",
+        "total": "100227364285601"
+    },
+    {
+        "user": "0xFe83f50Eed2e441EA6F5566FB46CEA9930797ef9",
+        "total": "88546339294456"
+    },
+    {
+        "user": "0xf2F25619a19B6AA5e483aC00A9258449AbB18D79",
+        "total": "87948471215423"
+    },
+    {
+        "user": "0x48C392f1586B5205D0dD2a24375CB23d677fB2Cd",
+        "total": "71056481120765"
+    },
+    {
+        "user": "0x3c2d09717E2D6ea161cf60C35CD55872CB157374",
+        "total": "47646912385514"
+    },
+    {
+        "user": "0xe740E441Cc81F073567d5C82fa9bc3334A001c1b",
+        "total": "33437864426434"
+    },
+    {
+        "user": "0xA7866e4e4862E03A27Df599a8d55d8dE952950b2",
+        "total": "32956066306442"
+    },
+    {
+        "user": "0x40b44834b8A10808474A049AB162ED260dD011a9",
+        "total": "28379861145161"
+    },
+    {
+        "user": "0x00427E5f2B3594D8B26306a2E648c956F83d3995",
+        "total": "25510755473906"
+    },
+    {
+        "user": "0x71A8c2487B2bC68Dd666Cef6D891927c797Db7e3",
+        "total": "22452132227224"
+    },
+    {
+        "user": "0x818167D70924DD67CF92A18890d26E0837a5A473",
+        "total": "21833939521636"
+    },
+    {
+        "user": "0x7cA3ED1c3A897Cdb10f7036966A4B036905Ac183",
+        "total": "21100000000000"
+    },
+    {
+        "user": "0xF6aaadA76eA7f044ffA028565b028740Dce5389F",
+        "total": "20001019690470"
+    },
+    {
+        "user": "0xd58E72Dc32077907F9a20c37fECd306F2a99ffE7",
+        "total": "17310643177876"
+    },
+    {
+        "user": "0x35434a35C19cabC4bD508Edf538cC1Cf33BDA688",
+        "total": "16613515691025"
+    },
+    {
+        "user": "0x3d632832001097a2e916cebb3efdF2A6AD25b1ff",
+        "total": "15037000893158"
+    },
+    {
+        "user": "0x3B8558ee91ca3FA0940ef8B008478Af01d735d08",
+        "total": "14690094179823"
+    },
+    {
+        "user": "0x7aa69b5EE49C4D3170e037960ca6c83F61241395",
+        "total": "11004432399793"
+    },
+    {
+        "user": "0x52069515870E06897f2198E72557E4162B5d8622",
+        "total": "10908137822703"
+    },
+    {
+        "user": "0x411375f3898565EC6C0880709990F91377634E6d",
+        "total": "8332692316060"
+    },
+    {
+        "user": "0x2fc6341e574fE0b1CD8F519020612Dd963F7420b",
+        "total": "7312498610786"
+    },
+    {
+        "user": "0x5bAee33C0b32eB2A7Daa7fA6Ef097bFcc725D96F",
+        "total": "6833875319815"
+    },
+    {
+        "user": "0x825AbEA65BF482DacF2DE5196603eBD4CD5517e1",
+        "total": "6061421120312"
+    },
+    {
+        "user": "0x8CA440e6e8AD6DbcAbec20Df94DC19047c614a6c",
+        "total": "6057122340880"
+    },
+    {
+        "user": "0x87c2779DFBb9B8d6CFe98Db14dF75AC39179aF62",
+        "total": "5826747963135"
+    },
+    {
+        "user": "0x8923547456cDEDAaB5cD84413f15516706103F7C",
+        "total": "5717505327496"
+    },
+    {
+        "user": "0x1a78CC80A66561a7da1909b6dCDE3A7189953F8f",
+        "total": "5249616785662"
+    },
+    {
+        "user": "0x411A80cf38c9eb3f2526dD962101F4c5A2f799E2",
+        "total": "4878703130073"
+    },
+    {
+        "user": "0xa2998DeC7eb7E6A3894d00C2277E24A11eD865dE",
+        "total": "4628405128053"
+    },
+    {
+        "user": "0xb83E3d64939f50b7e0Ed4eA6B747C442dcEa295a",
+        "total": "4312013676323"
+    },
+    {
+        "user": "0x6417070FF3eF819644ed65a35805E0f02a6DBE39",
+        "total": "4090395514791"
+    },
+    {
+        "user": "0x049808d5EAA90a2665b9703d2246DDed34F1EB73",
+        "total": "4000000000000"
+    },
+    {
+        "user": "0x625BF2Fa3362C1D05C4Fb23b6FE3193dDbE83e6f",
+        "total": "3940550946989"
+    },
+    {
+        "user": "0xcbc9862E1B6EB1cAa45192f0a44D81FA22FD0759",
+        "total": "3104676292817"
+    },
+    {
+        "user": "0xf15bc51cD0D41B6c515CE13f69cc2ce3c7e2113e",
+        "total": "2844557799147"
+    },
+    {
+        "user": "0x9eA8301EE5eEd8C2591f1558c61717616F1AdEF1",
+        "total": "2673921681847"
+    },
+    {
+        "user": "0x9b05b1Ca806687737Cda21a866fB1E4B6Fb6011f",
+        "total": "2549516186585"
+    },
+    {
+        "user": "0x60365Ee541a7B898019B4b0eEB1D6A08eC3784c9",
+        "total": "2380472982695"
+    },
+    {
+        "user": "0xFe7d6982C0191e81D6F87048b86C92de7AEc19f0",
+        "total": "2196365472222"
+    },
+    {
+        "user": "0x3Be456f6b708cB24436BC59D860d7F3C9C6Cf6aa",
+        "total": "2160044167564"
+    },
+    {
+        "user": "0x04C60B091C9FB34248a5341CeF64B0DAE363f5c2",
+        "total": "2011906293241"
+    },
+    {
+        "user": "0x2dBeFeE012aFb53D179434Fdc13eA53B347E6202",
+        "total": "1958781501105"
+    },
+    {
+        "user": "0xEA127321Ba91a126A7551E0ab341468488443705",
+        "total": "1797313751530"
+    },
+    {
+        "user": "0xC50d7932B121873170417Be3946d45A7E669F519",
+        "total": "1776024770502"
+    },
+    {
+        "user": "0xD3923dcb7E1AB789E84347E7EC229f4b73d2CA2C",
+        "total": "1575675836314"
+    },
+    {
+        "user": "0x53d1647CA08E64Ee882B9AccE6b9AFCEc57D022E",
+        "total": "1505634323237"
+    },
+    {
+        "user": "0x3c0F9599e0f13A96f6a4561484FC1d0293754054",
+        "total": "1427862472151"
+    },
+    {
+        "user": "0xD96B3f42F4D4f65B9bb7b76aD9382062D550D8eb",
+        "total": "1411872978938"
+    },
+    {
+        "user": "0x752f152562C8c1746Ced93f80495D5aeA1BA4151",
+        "total": "1300058088958"
+    },
+    {
+        "user": "0x63E8fC36ffB28732D02F16d7B795eA3eD39Ee083",
+        "total": "1297739731079"
+    },
+    {
+        "user": "0x5d3859Ca574077223011336d8cdc050C7f6fb36c",
+        "total": "1188269700978"
+    },
+    {
+        "user": "0x4a9D5d2AcA083E971fBf30Abcb608F61e0874f11",
+        "total": "1143193703268"
+    },
+    {
+        "user": "0xB63Ce746A72a1aB57343937Adf39BA31cE0fC566",
+        "total": "1134300000000"
+    },
+    {
+        "user": "0xf61d051cC7753f5ea2a1c1ee9000D935a11a0a3B",
+        "total": "1073264333128"
+    },
+    {
+        "user": "0x945fEEC38935b41574DbcE715683a96B1BbD1696",
+        "total": "1028101320001"
+    },
+    {
+        "user": "0xFD20c83d83a0EdC294bc4c10035cdaB22209F0a4",
+        "total": "1000000000000"
+    },
+    {
+        "user": "0x903006dF379Ba9c89468575acdbbFeb6c35A2B48",
+        "total": "993067963161"
+    },
+    {
+        "user": "0x80A976f39542539E901F2d5725035C846e474F1A",
+        "total": "893408149147"
+    },
+    {
+        "user": "0x387722B003d104aC6fdfBcd68B910A09cb9BA2c9",
+        "total": "849433640324"
+    },
+    {
+        "user": "0xdc506b095036D50BbB8a9479c6d7D7B9612945C3",
+        "total": "837024291398"
+    },
+    {
+        "user": "0xe0C4E6de9c1D321CcA006a3D00e30657faA6BA68",
+        "total": "790091243013"
+    },
+    {
+        "user": "0x0f295311eea8815c0B0A98f9a429102351711426",
+        "total": "666721462872"
+    },
+    {
+        "user": "0x4268E49fe3da0342E73b4871e438F4b71295E874",
+        "total": "650601808554"
+    },
+    {
+        "user": "0x48C61E6217A3c975C63F3724EBe1eA49E597D66f",
+        "total": "634228918438"
+    },
+    {
+        "user": "0x1809920112FB160A2A90aEC8ba411Ff9d6642247",
+        "total": "625183435138"
+    },
+    {
+        "user": "0x12488f5Be63FFA623B1DEED923d3efb77CA442d1",
+        "total": "622997843228"
+    },
+    {
+        "user": "0xaDa0471810E72fc45f7a66708F34913a329319CA",
+        "total": "612402917393"
+    },
+    {
+        "user": "0x0F148899E616BE31ccA47ae0B9B982f2049D76e0",
+        "total": "608648182097"
+    },
+    {
+        "user": "0xB591fb150Ab51E53FcB12511F4E9c73E3b81B219",
+        "total": "600642863430"
+    },
+    {
+        "user": "0x4C62B89a298A79bd9A4e05899C06095A1357cC58",
+        "total": "573915413543"
+    },
+    {
+        "user": "0xBC1fdDDDD6C3F1b4493b5E4ffe827EeeE9518688",
+        "total": "528788904968"
+    },
+    {
+        "user": "0xd21aca943EcF60f3bff593aD569ea0429FAe4c9b",
+        "total": "501730063330"
+    },
+    {
+        "user": "0xD2Ce2670A6428c9Ba41c2878a498A2a8c0c1748c",
+        "total": "450195679369"
+    },
+    {
+        "user": "0x31Bc99a27fDF7FdcBd3B333B847a26B1AEE25bC2",
+        "total": "428124952389"
+    },
+    {
+        "user": "0x4640c623F1Ef29ceDafEE082858b247bc21BD89f",
+        "total": "400358188850"
+    },
+    {
+        "user": "0x738726961dabef11514eC9b75E0665eE0050EbC4",
+        "total": "400298281008"
+    },
+    {
+        "user": "0x74C8ee8Eb5E5032083f87c8Cb9075C278A35C808",
+        "total": "345000000000"
+    },
+    {
+        "user": "0xe168E767AD0E50b88c10bB19B12bC80F1B92cCd5",
+        "total": "340183133706"
+    },
+    {
+        "user": "0x81c1bAF673249A29a772a9100a6bEc13974beC3a",
+        "total": "325007509809"
+    },
+    {
+        "user": "0x3F4DE7A32b628fcCad9269a5f01516E81436f1Cb",
+        "total": "310999184078"
+    },
+    {
+        "user": "0x064c2e8eCe816C932A94334804Bf6ebF4b174021",
+        "total": "310815525193"
+    },
+    {
+        "user": "0x29c05447B07bE313F8b42bd5956FDEb8Bfddf886",
+        "total": "292698699468"
+    },
+    {
+        "user": "0x3945aFE04397AB1480127Adad111d93017F0ACD0",
+        "total": "273187599361"
+    },
+    {
+        "user": "0x351440a02467a7DA986d53BcAC1E4f175b221b34",
+        "total": "267015164954"
+    },
+    {
+        "user": "0xE8D508f29bb8685B5e749C181cDbea28F98e698E",
+        "total": "261273870707"
+    },
+    {
+        "user": "0x89eAD3E08d137B4eC5E2B76a97ed700D6eef5a81",
+        "total": "260797645234"
+    },
+    {
+        "user": "0xE62A7e6397A8ba6b414AFFc1dE0237C20C7f6f83",
+        "total": "254306021427"
+    },
+    {
+        "user": "0x5c69D4BC09668cf339Def4179361B408c58D7E4e",
+        "total": "227183026993"
+    },
+    {
+        "user": "0xd0e156B45f6E57718F2d9d6Cf780b5a5392f2f7B",
+        "total": "223963654229"
+    },
+    {
+        "user": "0xF18049035D548bE3aF9423c22F587e05E502d476",
+        "total": "223522760801"
+    },
+    {
+        "user": "0x42ad79b6b9DFb804f71529FD590B2b33bBebb84E",
+        "total": "203087319762"
+    },
+    {
+        "user": "0x5A9b2f096A955be3B7B339fEc8f077D3Bab4BE04",
+        "total": "200828312357"
+    },
+    {
+        "user": "0xa81D50239B25B41Ae762F481dA4DFE2F988A9211",
+        "total": "200000000000"
+    },
+    {
+        "user": "0x1281e0Ae1Ef8B756F760b3af2f1e2F04B9aF59ea",
+        "total": "199482504008"
+    },
+    {
+        "user": "0xB032ec905759B464A75EBbD41703CCcebAE77934",
+        "total": "194597395564"
+    },
+    {
+        "user": "0x81ecd9bAe394E192961FF251fFedB414A64Dccda",
+        "total": "190761176969"
+    },
+    {
+        "user": "0x33938097b1D655761eAB28ED7dc8bc8A657267b9",
+        "total": "188563601409"
+    },
+    {
+        "user": "0xBE92C9f691AE66D8abD90A7e0B9f9b8609Cc4895",
+        "total": "187534204840"
+    },
+    {
+        "user": "0xaCFe5D0F9195F278490B4c8F6385C1ebb04ed170",
+        "total": "167521000000"
+    },
+    {
+        "user": "0x5C9109250555d1A56811C3806515520A3DC06974",
+        "total": "165154623681"
+    },
+    {
+        "user": "0x97AF6DFDD85052954b23eB85f09c0C83D5F9b786",
+        "total": "150000000000"
+    },
+    {
+        "user": "0x70255204450613Ba01A30fb74161Fbb873cfeaC5",
+        "total": "139098478655"
+    },
+    {
+        "user": "0x88e4F2B28617f8eeA8025C3055C360A59BeC69ce",
+        "total": "137313693136"
+    },
+    {
+        "user": "0x757932bDE36eCC9fD7b0790d98Cd407f1A1655b6",
+        "total": "135000000000"
+    },
+    {
+        "user": "0xd447C49E2682cc785341234AfAe5f58D290d3A87",
+        "total": "131026031886"
+    },
+    {
+        "user": "0x476eF21bf2A28e59A3605d1854a1b0A4c87C5296",
+        "total": "126573872155"
+    },
+    {
+        "user": "0x2ceC4Bc1e8582AFf8b84CD9DA209c97f58Bd633c",
+        "total": "121574320260"
+    },
+    {
+        "user": "0x09B9F5E1B0ec5585c1aE82a14a3d6089bFF2F0c6",
+        "total": "120655884615"
+    },
+    {
+        "user": "0x92aCdb54A04523c40966216bbD45890f74454B77",
+        "total": "120119702274"
+    },
+    {
+        "user": "0x0b553fb0328eb32A00449ed3341c570D3240F90a",
+        "total": "118831160261"
+    },
+    {
+        "user": "0x7D81275868D8935cA567F2609C436b37B362054B",
+        "total": "118162830493"
+    },
+    {
+        "user": "0x4BeAcEF73EA0996EA48Af1e6B2eF849b83Bb7B44",
+        "total": "116893816949"
+    },
+    {
+        "user": "0x558a0fe2f05F3bd4215903183D61aeFb8EcFf03E",
+        "total": "111662934034"
+    },
+    {
+        "user": "0xF4F02BBedEc2a192f2B371578Df8a65450ECc980",
+        "total": "110394186914"
+    },
+    {
+        "user": "0x55f8538e0ea2Eb6fd360be49E99Aefb9b86a7462",
+        "total": "107567480948"
+    },
+    {
+        "user": "0x38E36E512e0420849A1342b0B2C392FbAA293474",
+        "total": "106719139891"
+    },
+    {
+        "user": "0x727F724c00C59d5922CCc552cB19BA6a35490B55",
+        "total": "106154931776"
+    },
+    {
+        "user": "0x272b4EaBA11F1769943F9be703da96116E6e9c24",
+        "total": "103594643960"
+    },
+    {
+        "user": "0x977F26A082eEeB04305c45D597126F6C031B6214",
+        "total": "100796822392"
+    },
+    {
+        "user": "0x183409784515750E8A614a6611647Da1227a347d",
+        "total": "100000000000"
+    },
+    {
+        "user": "0x420472742029c0e52E75917EDfe625F8daEcEc2f",
+        "total": "100000000000"
+    },
+    {
+        "user": "0x6ca1fF3B4e05785383E9DB09f7Ca4BA37ED1BBfC",
+        "total": "100000000000"
+    },
+    {
+        "user": "0x59Ee569D8dc80b7edba29356cb21cf077536F1A2",
+        "total": "100000000000"
+    },
+    {
+        "user": "0x6f5C4Ed232A975B9Cc0fBD8e93E2b264Bea1F6dF",
+        "total": "100000000000"
+    },
+    {
+        "user": "0x43737fb7883761146b046637730037e9Cf287b7c",
+        "total": "93633914768"
+    },
+    {
+        "user": "0x656B0958A04E753cCfedA4Ab856EAAaAAA66f30c",
+        "total": "90000000000"
+    },
+    {
+        "user": "0x6dc307694b01c343E93836b8783Df6d8c5B29125",
+        "total": "82633306380"
+    },
+    {
+        "user": "0x6B15AE1946b36Fac6f93F16F026EC6F32dE0D64c",
+        "total": "80704532576"
+    },
+    {
+        "user": "0x535398D7601b6BbA4164a7Bb325a7a27529F2ED5",
+        "total": "78476115980"
+    },
+    {
+        "user": "0xe599483CB4cc902Ef4012FCf881c23FEa52Ff380",
+        "total": "73763008629"
+    },
+    {
+        "user": "0x302917895195C1e5E72EC3b69f149A5C4F8668Fd",
+        "total": "71378688049"
+    },
+    {
+        "user": "0xD8a830894eeA1eE8DaEAa8D62ED18a2a9CA64Ae8",
+        "total": "69591835345"
+    },
+    {
+        "user": "0x821d36d88E2B693BFe8b05B21366cedac1720011",
+        "total": "66491417542"
+    },
+    {
+        "user": "0xA22564a691BD18384597301079B015906eCaF0E9",
+        "total": "65362350341"
+    },
+    {
+        "user": "0x8202d1B448f8fCa2B52f0205cdafC524dcf24B51",
+        "total": "64351496091"
+    },
+    {
+        "user": "0xC5fa8BD65DDC93a5b253E7D801aea62FC08Fc5C3",
+        "total": "60990066877"
+    },
+    {
+        "user": "0x7472b9e36dfdb8b0e939D0A7107750f772Fc9908",
+        "total": "60000000000"
+    },
+    {
+        "user": "0x5f91EC6c2F2Ab1CFb8F5Be097F49302Dc8c6e43F",
+        "total": "59693615511"
+    },
+    {
+        "user": "0x5965578cA01b0842752D37e0923D9da351A21737",
+        "total": "56897712727"
+    },
+    {
+        "user": "0x9f97DdC68B4b2122474f59ff6E9Df25a4C2e882C",
+        "total": "56603362172"
+    },
+    {
+        "user": "0x542516Bd09242353b964E766eD64455d642362e4",
+        "total": "54936160658"
+    },
+    {
+        "user": "0xf8Db88ac13365756FEe9B70c4E94aF18a6aDe869",
+        "total": "53369618086"
+    },
+    {
+        "user": "0x4B1CBCADcfCEbC3Bd5997efCdfe65549321b2E68",
+        "total": "50910724451"
+    },
+    {
+        "user": "0x440Ca9e8971d9af0344FE2d48300fAB4dD21B9Eb",
+        "total": "50321502807"
+    },
+    {
+        "user": "0x391Bc96f7E3C27C6CB53B7A2a74EC825461aAC77",
+        "total": "50000000000"
+    },
+    {
+        "user": "0x97D504C44D1d9DAC4a596D802d2C22d65Ff39E7f",
+        "total": "50000000000"
+    },
+    {
+        "user": "0xB8bEd6B95C553764017262388E3510A3bcFDE394",
+        "total": "50000000000"
+    },
+    {
+        "user": "0xafb7e19a422216b2c496EC9b59dc46CdAD9DD48a",
+        "total": "45800668927"
+    },
+    {
+        "user": "0x8cCb00314A7554443AD85dF5BEe1d17C7Ead740d",
+        "total": "45000000000"
+    },
+    {
+        "user": "0x14A1d2Fca64360967165EE4A4a21AD0A850514ce",
+        "total": "43570697898"
+    },
+    {
+        "user": "0x65f04ae55e01F38FeeE66F0Cc29b77692F9BE3EE",
+        "total": "42771712753"
+    },
+    {
+        "user": "0x3779F6232A04c068d8988Ea595E83E1d1843Ffd7",
+        "total": "42019799977"
+    },
+    {
+        "user": "0x87b1328adC6F1ADC5FC6c0c5DB5CaA72A3e54775",
+        "total": "41653168365"
+    },
+    {
+        "user": "0xA9D4413c8Dc7ddd9B430EC98d93c7d0D40385FAd",
+        "total": "40584146280"
+    },
+    {
+        "user": "0xa41A2355f46084096eB6394D51f9E3B04c444599",
+        "total": "40005783930"
+    },
+    {
+        "user": "0x6BD0c34728D21d1aa6f5f8b28B72BF7D43A8B3eB",
+        "total": "40000000000"
+    },
+    {
+        "user": "0xB2287B8b48aeB743A44F24505129bf6AFC56543c",
+        "total": "40000000000"
+    },
+    {
+        "user": "0x0D0ACA99686fcEd8e6FB39134AaeD96F09b5283c",
+        "total": "39699462371"
+    },
+    {
+        "user": "0x267DEa79A3509811209b48E7700619B117aCA699",
+        "total": "39289313752"
+    },
+    {
+        "user": "0xF1e4f4336293D5902A428666C117Cb6096d70990",
+        "total": "37353483138"
+    },
+    {
+        "user": "0x841594982480e80Df7A0191ac9e4eF435932DbfC",
+        "total": "36591462215"
+    },
+    {
+        "user": "0x39961520e442Af7735Ad49aED06a1e9173371eF9",
+        "total": "35719451113"
+    },
+    {
+        "user": "0x0dF97D3f344fe39cBBD5A2eF59763a9F60b9cff4",
+        "total": "35327380591"
+    },
+    {
+        "user": "0x0E0fA1f3d4A343758113269ACa0394b72e391cac",
+        "total": "35267102793"
+    },
+    {
+        "user": "0xa3020dF768D66049671d3A895A072e5B9E9f4Daa",
+        "total": "34437055656"
+    },
+    {
+        "user": "0x9Ec87B05f8eCFCcb4ddFD3e726a9eA73Ca167Ef8",
+        "total": "33846624945"
+    },
+    {
+        "user": "0x491083A9031a09A5F4FA74Abf072688EE73406B9",
+        "total": "32234729929"
+    },
+    {
+        "user": "0x274CAB5F3cc27df54D3f065E2D704a87aAef0cC0",
+        "total": "31554794449"
+    },
+    {
+        "user": "0x64463eC252493Ca5E7AE083bf820568DEc1ED1DA",
+        "total": "31185525462"
+    },
+    {
+        "user": "0x0c2317Cf931e1Ff23001588E57D97Ca8d0522b2B",
+        "total": "30698740399"
+    },
+    {
+        "user": "0x164458Cf50Ea507E5eA11b80723eD8113403FAd2",
+        "total": "30305494160"
+    },
+    {
+        "user": "0x2b0CfB12ED66d6f592E61B742F1444FA5d1cC233",
+        "total": "30000000000"
+    },
+    {
+        "user": "0x51eEEF0155Bf4869C178F5d9c1d8871b11A6F99f",
+        "total": "29652352181"
+    },
+    {
+        "user": "0x2DE9143fb158996cCEd9e6cf72aab4a9e7111599",
+        "total": "29491457433"
+    },
+    {
+        "user": "0x0C2fdd43160076B0C73657759c26d951893ca3e8",
+        "total": "27500000000"
+    },
+    {
+        "user": "0xCDE381003b8E1B7169F7eB3f55f484dD1136b190",
+        "total": "25000000000"
+    },
+    {
+        "user": "0xFd031e761CdEe2CbC974CE84827ED262a770884f",
+        "total": "24249751842"
+    },
+    {
+        "user": "0x7Ed9dC4698e7517031290712A0C542996DDD6e40",
+        "total": "23821688707"
+    },
+    {
+        "user": "0x0ae05ecFAf2ee11e03c89Eaa96785A2e9505e218",
+        "total": "23717484401"
+    },
+    {
+        "user": "0x35F105E802DA60D3312e5a89F51453A0c46B9Dad",
+        "total": "23458298983"
+    },
+    {
+        "user": "0xf7b8017a8fcF6C8C5Ea5a762D751F8124a3A5A63",
+        "total": "22957276148"
+    },
+    {
+        "user": "0x083632CD42e25c41206f3f18D334939715adF2E8",
+        "total": "22226948731"
+    },
+    {
+        "user": "0xA9Aa6759bA479Fd980212403E36dF8488326c38e",
+        "total": "21746295097"
+    },
+    {
+        "user": "0x07217AbAf71CF29b24eBda3C469Df8481FE368Bc",
+        "total": "21511069239"
+    },
+    {
+        "user": "0x5Ecf2bF841c0E1BBbf09682f06B1507F6aF86915",
+        "total": "21157236581"
+    },
+    {
+        "user": "0xa925e3D1aEb3bcE1a23a74C6e96a54b50cF45782",
+        "total": "20643891194"
+    },
+    {
+        "user": "0xBEe1314a430D80aEa224860B020dce7eC25Eed98",
+        "total": "20112973889"
+    },
+    {
+        "user": "0x4Bf396104eBDa46f8Dd5849C3D1a94483bCeFA29",
+        "total": "20000000000"
+    },
+    {
+        "user": "0x5805c8c77187AAAAcE20BD2aF4F8412C7b9a9275",
+        "total": "19977274576"
+    },
+    {
+        "user": "0x29BA9A205d7db2Adce40764fBe2eF176A181A484",
+        "total": "19464745307"
+    },
+    {
+        "user": "0x4579DF06DaF502D05dB64fEfA82F58c8B2430002",
+        "total": "19273819289"
+    },
+    {
+        "user": "0xeD8b9A58e92a53f63d07195A85c0FfFe0E4CD0cC",
+        "total": "19120135081"
+    },
+    {
+        "user": "0xe30DE63e681b107592048AE2e5CE3d5573c11632",
+        "total": "18616488707"
+    },
+    {
+        "user": "0x61EB3C4a3B0f64BF6BE8B234e50F1853bc27754A",
+        "total": "18575850607"
+    },
+    {
+        "user": "0xb0D1b2941B8dfFA993184d8e62d424cCAbaFC460",
+        "total": "18307094788"
+    },
+    {
+        "user": "0x62c107ef172fCF6C8eDDd1f36C852dC313037F59",
+        "total": "17381874827"
+    },
+    {
+        "user": "0xAf7392A4FD8C582D819c8b5d21b7a9Dc5413986d",
+        "total": "16214229086"
+    },
+    {
+        "user": "0x4A107db3D886a8a85d022349A387d6A89FA92E5a",
+        "total": "16029005132"
+    },
+    {
+        "user": "0x2C9878C61683984494E871B4270fF7485a7A22cf",
+        "total": "15843179648"
+    },
+    {
+        "user": "0x2395e2C40F8974104550b7E9f68edcc292A6E23a",
+        "total": "15629810974"
+    },
+    {
+        "user": "0x685501524856aEbd9B1022bD076e8f913F02d347",
+        "total": "15174149674"
+    },
+    {
+        "user": "0x6B2aF7838478835716dD0Cbed7567a15CA0941BB",
+        "total": "15100000000"
+    },
+    {
+        "user": "0xB763F041FB7B387006EeBf0b9eBB2A87fBD45dbA",
+        "total": "15037271572"
+    },
+    {
+        "user": "0x2CE5Ba60F6eC849fF7d18B0a7a77e7f7b5dD262F",
+        "total": "15000000000"
+    },
+    {
+        "user": "0x7181B9a218fad0B57519C765E8728f2CeC9EC06C",
+        "total": "14653738089"
+    },
+    {
+        "user": "0xF014B40ef9976e97405EA3Bbf66009D6018EeF3B",
+        "total": "14521073859"
+    },
+    {
+        "user": "0x1890318901ff74407A324C33dC966f33340c5E61",
+        "total": "14443124300"
+    },
+    {
+        "user": "0x5E50B04e78144A4c7BED40cD78fdEe537D928CCa",
+        "total": "14057183559"
+    },
+    {
+        "user": "0xbdA4341Fa716486A4ddBe10Cd168dF843F5D6d33",
+        "total": "12300000000"
+    },
+    {
+        "user": "0x1D121d8a6C764a0eB832294579bBBa70aEBDc2D3",
+        "total": "11745941392"
+    },
+    {
+        "user": "0x139CcCBbE190c90Ea7903bB28ED2a3A79CC83952",
+        "total": "11656011081"
+    },
+    {
+        "user": "0x43018918F5a5eD8BBdBAA46066A017aad0886BdB",
+        "total": "11284539691"
+    },
+    {
+        "user": "0x5972dA5FF1B91a83fce2cdA94Ad8601DC0eB14B3",
+        "total": "11115518609"
+    },
+    {
+        "user": "0x1f92Bd05b5E1022354e2c7760B5A03aa56f8687E",
+        "total": "10897665805"
+    },
+    {
+        "user": "0xEB06A52B5AD831eE265aDE07bDA1309c63C0400f",
+        "total": "10455573464"
+    },
+    {
+        "user": "0x0A81b2c730684fb2228E0A1418Ad9a375ebd82DA",
+        "total": "10435899010"
+    },
+    {
+        "user": "0x244806e7Efc0F40856668d9D12534a34d15B1d8c",
+        "total": "10229531237"
+    },
+    {
+        "user": "0x11eDedebF63bef0ea2d2D071bdF88F71543ec6fB",
+        "total": "10215946248"
+    },
+    {
+        "user": "0x6B6D28AC44674e11137e4C826A3DdA53162198F1",
+        "total": "10100000000"
+    },
+    {
+        "user": "0x98B559863919e3b7eb9dAe5b83aFdB1F233837b6",
+        "total": "10000000000"
+    },
+    {
+        "user": "0xa7FBc801e5D0be65EF8337AbEFed9F8f72042352",
+        "total": "10000000000"
+    },
+    {
+        "user": "0xCE6a52ee9f9b6EdA89BAdEd55e1d47895eEa7649",
+        "total": "10000000000"
+    },
+    {
+        "user": "0xDF14100B76a5b5fd46FbA22b7Ac124919CFfC92a",
+        "total": "10000000000"
+    },
+    {
+        "user": "0xC9B22861E6acF0fc2316eb7a7608e8D2Be4847DA",
+        "total": "10000000000"
+    },
+    {
+        "user": "0x5034227994573Cc8921138b4b09aC354a813741F",
+        "total": "9996144733"
+    },
+    {
+        "user": "0x059E51c98C0a5B89624E8C1937a001DbEaCEda8c",
+        "total": "8619835790"
+    },
+    {
+        "user": "0x675ddaA6B7cfB944daA28a99f0B6f4559dCB2BB0",
+        "total": "8277083625"
+    },
+    {
+        "user": "0x6013125bCC1A9026F63937e3c9788fAf16966F6c",
+        "total": "8258627581"
+    },
+    {
+        "user": "0xC18D0091c06D8E3BF2d7d60f73cFd66CbB96A5C3",
+        "total": "8000000000"
+    },
+    {
+        "user": "0x961B8d72658bb8Bf7AFfEe016c67B661Db30cABc",
+        "total": "7827360096"
+    },
+    {
+        "user": "0xE6a01a89EB512192C9694e0f31631f2bb1aBc69d",
+        "total": "7004860187"
+    },
+    {
+        "user": "0x5459E0A8000573Fd6921da4096665213Ba5aE873",
+        "total": "6961979143"
+    },
+    {
+        "user": "0x3C6aEaE12e300cf55FFf3d905D356215F9B2c318",
+        "total": "6505715713"
+    },
+    {
+        "user": "0x7299B91174F79C820aA1Ed787F6C719A20AbcA95",
+        "total": "6371722902"
+    },
+    {
+        "user": "0xAdcF01b3b41384C3B524470cDD3Ae6d65c1F452F",
+        "total": "6119594392"
+    },
+    {
+        "user": "0xC49d4729282F9D6880742e01d9e6a61f1C97f61A",
+        "total": "5927763099"
+    },
+    {
+        "user": "0x86417AcF246f42EDf94C0eAD4DfD70Ba8014FF21",
+        "total": "5896500994"
+    },
+    {
+        "user": "0xB095C3BcE8d0092EC6E491784135403b1ADa2079",
+        "total": "5889616923"
+    },
+    {
+        "user": "0x09416E8721E3446E9e8e7026b667088273d6011b",
+        "total": "5150176744"
+    },
+    {
+        "user": "0x4738c8b9e0d7b48db4056BF017D2F90b2319630d",
+        "total": "5000000000"
+    },
+    {
+        "user": "0xD03e2dCC8C1E25987C06CC5151A16dC662E2a341",
+        "total": "4613736710"
+    },
+    {
+        "user": "0xB4f3Dd88Fd6baf12695837045E51f91346bED883",
+        "total": "4065040650"
+    },
+    {
+        "user": "0x93C72384498c6Ff777E5bBF1154edFD2324B47aF",
+        "total": "4029151642"
+    },
+    {
+        "user": "0x93a1Fff543dC5A2F6ae6543a1c827d3991e17a3A",
+        "total": "3700000000"
+    },
+    {
+        "user": "0x7c8FAA39C83d790DEA6D0F03Ce1Cf23b903c3AC1",
+        "total": "3473896507"
+    },
+    {
+        "user": "0x8EAB1ec8300027027b3DD370bc0DFA87D9165DD7",
+        "total": "2440693834"
+    },
+    {
+        "user": "0x2452f33D10956C7b115110278165166a83766622",
+        "total": "2054618922"
+    },
+    {
+        "user": "0x5F91cB7B9f15BD8D2A49787a385Cd91F3777F99A",
+        "total": "1983219294"
+    },
+    {
+        "user": "0x886Ec2DC3AcE0B9B1673B7802f18c4C154De27f5",
+        "total": "1870682438"
+    },
+    {
+        "user": "0x4bFd81BE14041c0490626Fc9024C5db4Ad5BC5Fe",
+        "total": "1418222762"
+    },
+    {
+        "user": "0x2c4170682D709F548b7F2b51599f025Caafa25F8",
+        "total": "900000000"
+    },
+    {
+        "user": "0x75A329EE96860333B15E3E9B0ad5b46cE5268740",
+        "total": "503863416"
+    },
+    {
+        "user": "0x035662be6Fe7f58940adb92c578282097D6725Dc",
+        "total": "308611314"
+    },
+    {
+        "user": "0xc14c4F64806f37C05BF3f50F327BB91220F8CFdB",
+        "total": "200000000"
+    },
+    {
+        "user": "0x1E0B4E82bD847DaE91d2E0BF6255522B24622485",
+        "total": "97562559"
+    },
+    {
+        "user": "0xc6144b1B3f04e766C4F9bb5F315fFE04795F697B",
+        "total": "84657165"
+    },
+    {
+        "user": "0x959cF5E36b65536d311316e4517fF63b08910A17",
+        "total": "78394685"
+    },
+    {
+        "user": "0x722a3e4B2e409Ced71134eD92d946432741a1D4B",
+        "total": "75862992"
+    },
+    {
+        "user": "0xD42c5bC6fa89507a5f9c9eed7Ff2F8d9Ada093E1",
+        "total": "10174757"
+    },
+    {
+        "user": "0x237ec64cC27196F6a4C16AbdBb558B4C518400C2",
+        "total": "148492"
+    }
+]
