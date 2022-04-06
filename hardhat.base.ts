@@ -1,18 +1,18 @@
 /* eslint-disable camelcase */
-import "@nomiclabs/hardhat-ethers";
-import "@nomiclabs/hardhat-etherscan";
-import "@nomiclabs/hardhat-waffle";
-import "@openzeppelin/hardhat-upgrades";
-import "@typechain/hardhat";
-import "hardhat-deploy";
-import "hardhat-deploy-ethers";
-import { HardhatUserConfig } from "hardhat/config";
+import "@nomiclabs/hardhat-ethers"
+import "@nomiclabs/hardhat-etherscan"
+import "@nomiclabs/hardhat-waffle"
+import "@openzeppelin/hardhat-upgrades"
+import "@typechain/hardhat"
+import "hardhat-deploy"
+import "hardhat-deploy-ethers"
+import { HardhatUserConfig } from "hardhat/config"
 import {
   HardhatNetworkAccountsUserConfig,
   NetworksUserConfig,
-} from "hardhat/types";
-import "solidity-coverage";
-import { Networks, SupportedNetwork } from "./network.config";
+} from "hardhat/types"
+import "solidity-coverage"
+import { Networks, SupportedNetwork } from "./network.config"
 
 let networks: NetworksUserConfig = {
   mainnet: {
@@ -57,28 +57,28 @@ let networks: NetworksUserConfig = {
     saveDeployments: true,
     chainId: 4,
   },
-};
-const HARDHAT_NETWORK_ID = 31337;
-let isFork = false;
-let localChainId = HARDHAT_NETWORK_ID;
-let forkingURL;
-let forkId = process.env.FORK as SupportedNetwork;
-let forkAccounts: HardhatNetworkAccountsUserConfig = [];
+}
+const HARDHAT_NETWORK_ID = 31337
+let isFork = false
+let localChainId = HARDHAT_NETWORK_ID
+let forkingURL
+let forkId = process.env.FORK as SupportedNetwork
+let forkAccounts: HardhatNetworkAccountsUserConfig = []
 if (forkId) {
-  isFork = true;
-  forkingURL = Networks[forkId].providerURL;
-  localChainId = networks[forkId]?.chainId || HARDHAT_NETWORK_ID;
+  isFork = true
+  forkingURL = Networks[forkId].providerURL
+  localChainId = networks[forkId]?.chainId || HARDHAT_NETWORK_ID
   forkAccounts = (Networks[forkId].privateKeys || []).map((pk) => ({
     privateKey: pk,
     balance: BigInt(10_000_000_000_000_000_000_000n).toString(),
-  }));
+  }))
 }
 networks.localhost = {
   chainId: localChainId,
   live: false,
   saveDeployments: true,
   tags: ["local"],
-};
+}
 networks.hardhat = {
   gasPrice: "auto",
   // set this to 0 to work-around https://github.com/sc-forks/solidity-coverage/issues/652
@@ -94,12 +94,13 @@ networks.hardhat = {
       },
     },
   },
+
   chainId: localChainId,
   live: false,
   saveDeployments: true,
   tags: ["test", "local"],
   accounts: forkAccounts.length > 0 ? forkAccounts : undefined,
-};
+}
 const hardhatConfig: HardhatUserConfig = {
   etherscan: {
     apiKey: process.env.ETHERSCAN_APIKEY,
@@ -132,6 +133,6 @@ const hardhatConfig: HardhatUserConfig = {
   mocha: {
     timeout: 0,
   },
-};
+}
 
-export default hardhatConfig;
+export default hardhatConfig
