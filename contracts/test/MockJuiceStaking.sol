@@ -4,8 +4,9 @@ pragma solidity ^0.8.10;
 
 import "../interfaces/IPriceOracle.sol";
 import "../JuiceStaking.sol";
+import "../JuiceStaking01.sol";
 
-contract MockJuiceStaking is JuiceStaking {
+contract MockJuiceStaking is JuiceStaking01 {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     function getPriceOracle(address addr) public view returns (IPriceOracle) {

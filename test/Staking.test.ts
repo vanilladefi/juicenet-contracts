@@ -4,8 +4,8 @@ import chaiAsPromised from "chai-as-promised"
 
 import {
   IPriceOracle__factory,
-  JuiceStaking,
-  JuiceStaking__factory, MockJuiceStaking, MockJuiceStaking__factory, MockJuiceStakingUpgrade,
+  JuiceStaking01,
+  JuiceStaking01__factory, MockJuiceStaking, MockJuiceStaking__factory, MockJuiceStakingUpgrade,
   MockPriceOracle,
   MockPriceOracle__factory,
   MockSignalAggregator,
@@ -112,7 +112,7 @@ describe("Staking", () => {
   let deployer: Wallet, noJuice: Wallet, noDeposit: Wallet, withDeposit
 
   describe("Basic ERC-20 functionality", () => {
-    let erc20: JuiceStaking
+    let erc20: JuiceStaking01
     let withJuice: Wallet
     beforeEach(async () => {
       ({ stakingContract: erc20, deployer, users: { noJuice, noDeposit: withJuice } } = await loadFixture(initializeJuicenet))
@@ -175,7 +175,7 @@ describe("Staking", () => {
   })
 
   describe("Deposits", () => {
-    let stakingContract: JuiceStaking
+    let stakingContract: JuiceStaking01
     let user: Wallet
     beforeEach(async () => {
       ({ stakingContract, users: { noJuice, noDeposit: user } } = await loadFixture(initializeJuicenet))
@@ -215,7 +215,7 @@ describe("Staking", () => {
   })
 
   describe("Withdraws", () => {
-    let stakingContract: JuiceStaking
+    let stakingContract: JuiceStaking01
     let user: Wallet
     beforeEach(async () => {
       ({ stakingContract, users: { withDeposit: user, noDeposit } } = await loadFixture(initializeJuicenet))
@@ -262,7 +262,7 @@ describe("Staking", () => {
 
   type StakeHelper = { long: (amount: BigNumberish) => StakingParam; short: (amount: BigNumberish) => StakingParam }
   describe("Modifying Stakes", () => {
-    let stakingContract: JuiceStaking
+    let stakingContract: JuiceStaking01
     let oracles: MockPriceOracle[], oracle: MockPriceOracle
     let tokens: string[]
     let token1: string, token2: string, token3: string, tokenWithoutPriceOracle: string
@@ -947,7 +947,7 @@ describe("Staking", () => {
   })
 
   describe("Minting", () => {
-    let stakingContract: JuiceStaking
+    let stakingContract: JuiceStaking01
     let a:Wallet, b: Wallet
     beforeEach(async () => {
       ({ stakingContract, accounts: [a, b] } = await loadFixture(initializeJuicenet))
@@ -974,7 +974,7 @@ describe("Staking", () => {
   })
 
   describe("Aggregating signal", () => {
-    let stakingContract: JuiceStaking
+    let stakingContract: JuiceStaking01
     let signalAggregator: MockSignalAggregator
     let nonOwner: Wallet
     beforeEach(async () => {
@@ -1003,7 +1003,7 @@ describe("Staking", () => {
   })
 
   describe("Pausing", () => {
-    let stakingContract: JuiceStaking
+    let stakingContract: JuiceStaking01
     let a: Wallet, b: Wallet
     beforeEach(async () => {
       ({ stakingContract, deployer, users: { noDeposit: a, noJuice: b } } = await loadFixture(initializeJuicenet))
@@ -1040,7 +1040,7 @@ describe("Staking", () => {
   })
 
   describe("Delegating deposit and withdraw", () => {
-    let stakingContract: JuiceStaking
+    let stakingContract: JuiceStaking01
     let signatureVerifier: MockSignatureVerifier
     let user: Wallet
     let helper: { signDeposit: any; signWithdraw: any; domain?: () => Promise<{ name: string; version: string; chainId: number; verifyingContract: string }>; signModifyStakes?: (stakes: { sentiment: boolean; token: string; amount: BigNumberish }[], user: Wallet, nonce: number, deadline?: number) => Promise<{ data: { sender: string; deadline: number; nonce: number }; signature: string }> }
@@ -1171,7 +1171,7 @@ describe("Staking", () => {
   })
 
   describe("Upgrades", () => {
-    let stakingContract: JuiceStaking
+    let stakingContract: JuiceStaking01
     let a: Wallet, b: Wallet
     let initializationCall = { call: { fn: "initializeOnUpgrade", args: [127] } }
     beforeEach(async () => {

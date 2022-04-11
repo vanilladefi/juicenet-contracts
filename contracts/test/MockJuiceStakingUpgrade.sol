@@ -3,9 +3,9 @@
 pragma solidity ^0.8.10;
 
 import "../JuiceStaking.sol";
-import "hardhat/console.sol";
+import "../JuiceStaking01.sol";
 
-contract MockJuiceStakingUpgrade is JuiceStaking {
+contract MockJuiceStakingUpgrade is JuiceStaking01 {
     uint256 public addedField;
 
     function initializeOnUpgrade(uint256 fieldValue) external onlyOwner {
@@ -20,9 +20,7 @@ contract MockBadJuiceStakingUpgrade is UUPSUpgradeable {
         addedField = fieldValue;
     }
 
-    function _authorizeUpgrade(address newImplementation) internal override {
-
-    }
+    function _authorizeUpgrade(address newImplementation) internal override {}
 }
 
 contract MockNonUUPSJuiceStakingUpgrade {
@@ -31,6 +29,4 @@ contract MockNonUUPSJuiceStakingUpgrade {
     function initializeOnUpgrade(uint256 fieldValue) external {
         addedField = fieldValue;
     }
-
 }
-
