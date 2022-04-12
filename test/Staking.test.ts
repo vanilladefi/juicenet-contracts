@@ -190,6 +190,7 @@ describe("Staking", () => {
         [user, stakingContract],
         [-deposit, deposit])
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(deposit)
+      expect(await getStateChanges(await depositTx)).to.matchSnapshot()
     })
 
     it("works when depositing a portion of JUICE", async () => {
@@ -200,6 +201,7 @@ describe("Staking", () => {
         [user, stakingContract],
         [-deposit, deposit])
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(deposit)
+      expect(await getStateChanges(await depositTx)).to.matchSnapshot()
     })
 
     it("fails when depositing more than current balance", async () => {
@@ -607,7 +609,6 @@ describe("Staking", () => {
         token1Stake.long(100),
         token2Stake.long(50),
       ]))
-      expect(await getStateChanges(tx1)).to.matchSnapshot()
       let tx2 = await call(stakingContract.connect(user2).modifyStakes([
         token1Stake.short(50),
         token3Stake.short(25),
@@ -615,12 +616,13 @@ describe("Staking", () => {
 
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(999850)
       expect(await stakingContract.unstakedBalanceOf(user2.address)).to.equal(999925)
-      expect(await getStateChanges(tx2)).to.matchSnapshot()
 
       let { longTokens } = await stakingContract.normalizedAggregateSignal()
       expect(longTokens.length).to.equal(2)
       expect(longTokens.map(x => x.token)).to.eql([token1, token2])
       expect(longTokens.map(x => x.weight.toNumber())).to.eql([25, 8])
+      expect(await getStateChanges(tx1)).to.matchSnapshot()
+      expect(await getStateChanges(tx2)).to.matchSnapshot()
     })
 
     it("stakes in the same block with price change always get the changed price", async () => {
@@ -652,11 +654,12 @@ describe("Staking", () => {
         expect(openReceipt.blockNumber).to.be.equal(priceChangeReceipt.blockNumber)
         expect(openReceipt.transactionIndex).to.be.lessThan(priceChangeReceipt.transactionIndex)
         expect(await currentStake(user.address, token1)).to.include({ juiceStake: firstStake, juiceValue: firstStake, currentPrice: newPrice, sentiment: true })
-        expect(await getStateChanges(openTx)).to.matchSnapshot()
 
         let closeTx = await stakingContract.connect(user).modifyStakes([stake.long(0)])
         await ethers.provider.send("evm_mine", [])
         await expect(closeTx).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token1, true, newPrice, firstStake)
+
+        expect(await getStateChanges(openTx)).to.matchSnapshot()
         expect(await getStateChanges(closeTx)).to.matchSnapshot()
       } finally {
         await ethers.provider.send("evm_setAutomine", [true])
@@ -669,23 +672,21 @@ describe("Staking", () => {
       const firstStake = INIT_JUICE_SUPPLY / 4
       const secondStake = INIT_JUICE_SUPPLY / 2
       await call(priceOracle.setPrice(price))
-      {
-        let tx = call(stakingContract.connect(user).modifyStakes([stake.long(firstStake)]))
-        await expect(tx).to.emit(stakingContract, "StakeAdded").withArgs(user.address, token1, true, price, -firstStake)
-        expect(await getStateChanges(await tx)).to.matchSnapshot()
-      }
 
-      {
-        let tx = call(stakingContract.connect(user).modifyStakes([stake.long(secondStake)]))
-        await expect(tx).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token1, true, price, firstStake)
-        await expect(tx).to.emit(stakingContract, "StakeAdded").withArgs(user.address, token1, true, price, -secondStake)
-        expect(await getStateChanges(await tx)).to.matchSnapshot()
-      }
+      let tx1 = call(stakingContract.connect(user).modifyStakes([stake.long(firstStake)]))
+      await expect(tx1).to.emit(stakingContract, "StakeAdded").withArgs(user.address, token1, true, price, -firstStake)
+
+      let tx2 = call(stakingContract.connect(user).modifyStakes([stake.long(secondStake)]))
+      await expect(tx2).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token1, true, price, firstStake)
+      await expect(tx2).to.emit(stakingContract, "StakeAdded").withArgs(user.address, token1, true, price, -secondStake)
 
       let { juiceValue, sentiment } = await stakingContract.currentStake(user.address, token1)
       expect(juiceValue).to.equal(secondStake)
       expect(sentiment).to.equal(true)
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(0)
+
+      expect(await getStateChanges(await tx1)).to.matchSnapshot()
+      expect(await getStateChanges(await tx2)).to.matchSnapshot()
     })
 
     it("adding second stake removes the first also in shorts", async () => {
@@ -694,24 +695,22 @@ describe("Staking", () => {
       const firstStake = INIT_JUICE_SUPPLY / 4
       const secondStake = INIT_JUICE_SUPPLY / 2
       await call(priceOracle.setPrice(price))
-      {
-        let tx = call(stakingContract.connect(user).modifyStakes([stake.short(firstStake)]))
-        await expect(tx).to.emit(stakingContract, "StakeAdded").withArgs(user.address, token1, false, price, -firstStake)
-        expect(await getStateChanges(await tx)).to.matchSnapshot()
-      }
 
-      {
-        let tx = call(stakingContract.connect(user).modifyStakes([stake.short(secondStake)]))
-        await expect(tx).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token1, false, price, firstStake)
-        await expect(tx).to.emit(stakingContract, "StakeAdded").withArgs(user.address, token1, false, price, -secondStake)
-        expect(await getStateChanges(await tx)).to.matchSnapshot()
-      }
+      let tx1 = call(stakingContract.connect(user).modifyStakes([stake.short(firstStake)]))
+      await expect(tx1).to.emit(stakingContract, "StakeAdded").withArgs(user.address, token1, false, price, -firstStake)
+
+      let tx2 = call(stakingContract.connect(user).modifyStakes([stake.short(secondStake)]))
+      await expect(tx2).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token1, false, price, firstStake)
+      await expect(tx2).to.emit(stakingContract, "StakeAdded").withArgs(user.address, token1, false, price, -secondStake)
 
       let { juiceValue, currentPrice, sentiment } = await stakingContract.currentStake(user.address, token1)
       expect(juiceValue).to.equal(secondStake)
       expect(currentPrice).to.equal(price)
       expect(sentiment).to.equal(false)
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(0)
+
+      expect(await getStateChanges(await tx1)).to.matchSnapshot()
+      expect(await getStateChanges(await tx2)).to.matchSnapshot()
     })
 
     it("shorts can only lose the staked amount", async () => {
@@ -730,14 +729,12 @@ describe("Staking", () => {
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(totalAmount - stakedAmount)
       expect(await stakingContract.totalSupply()).to.equal(nonUserTotalAmount + totalAmount)
       expect(await stakingContract.balanceOf(stakingContract.address)).to.equal(totalAmount)
-      expect(await getStateChanges(tx1)).to.matchSnapshot()
 
       // hike the price up 200%
       price = 3n * price
       await call(priceOracle.setPrice(price))
       let tx2 = call(stakingContract.connect(user).modifyStakes([stake.short(0)]))
-      await expect(tx2).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token1, false, price, 0)
-      expect(await getStateChanges(await tx2)).to.matchSnapshot();
+      await expect(tx2).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token1, false, price, 0);
 
       ({ juiceValue, sentiment } = await stakingContract.currentStake(user.address, token1))
       expect(juiceValue).to.equal(0)
@@ -746,6 +743,9 @@ describe("Staking", () => {
       // closing position at loss burns Juice
       expect(await stakingContract.totalSupply()).to.equal(nonUserTotalAmount + totalAmount - stakedAmount)
       expect(await stakingContract.balanceOf(stakingContract.address)).to.equal(totalAmount - stakedAmount)
+
+      expect(await getStateChanges(tx1)).to.matchSnapshot()
+      expect(await getStateChanges(await tx2)).to.matchSnapshot()
     })
 
     it("refunds the original amount when closing a stake after price oracle has been removed", async () => {
@@ -760,10 +760,8 @@ describe("Staking", () => {
         stakingContract.unstakedBalanceOf(user.address),
         stakingContract.unstakedBalanceOf(user2.address)])
       let tx1 = await call(stakingContract.connect(user).modifyStakes([stake.long(user1Stake)]))
-      expect(await getStateChanges(tx1)).to.matchSnapshot()
 
       let tx2 = await call(stakingContract.connect(user2).modifyStakes([stake.short(user2Stake)]))
-      expect(await getStateChanges(tx2)).to.matchSnapshot()
 
       // make price go up 50% to verify that removing price oracle will affect in juice value calculations in both long and short positions
       let newPrice = Math.floor(price * 1.5)
@@ -777,13 +775,15 @@ describe("Staking", () => {
       expect(await currentStake(user2.address, token1)).to.include({ juiceStake: user2Stake, juiceValue: user2Stake, currentPrice: 0, sentiment: false })
 
       let tx3 = await call(stakingContract.connect(user).modifyStakes([stake.long(0)]))
-      expect(await getStateChanges(tx3)).to.matchSnapshot()
-
       let tx4 = await call(stakingContract.connect(user2).modifyStakes([stake.short(0)]))
-      expect(await getStateChanges(tx4)).to.matchSnapshot()
 
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(expectedUser1Balance)
       expect(await stakingContract.unstakedBalanceOf(user2.address)).to.equal(expectedUser2Balance)
+
+      expect(await getStateChanges(tx1)).to.matchSnapshot()
+      expect(await getStateChanges(tx2)).to.matchSnapshot()
+      expect(await getStateChanges(tx3)).to.matchSnapshot()
+      expect(await getStateChanges(tx4)).to.matchSnapshot()
     })
 
     it("fails when paused", async () => {
@@ -805,12 +805,12 @@ describe("Staking", () => {
       await priceOracle.setPrice(100000000)
       let tx = call(stakingContract.connect(user).modifyStakes([stake.long(0)]))
       await expect(tx).to.not.emit(stakingContract, "StakeAdded")
-      expect(await getStateChanges(await tx)).to.matchSnapshot()
 
       let { juiceValue, sentiment } = await stakingContract.currentStake(user.address, token1)
       expect(juiceValue).to.equal(0)
       expect(sentiment).to.equal(false)
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(INIT_JUICE_SUPPLY / 2)
+      expect(await getStateChanges(await tx)).to.matchSnapshot()
     })
 
     it("stake is limited when overstaking", async () => {
@@ -987,10 +987,11 @@ describe("Staking", () => {
 
         let tx1 = await call(stakingContract.connect(deployer).authorizeSignalAggregator(signalAggregator.address))
         expect(await stakingContract.signalAggregator()).to.equal(signalAggregator.address)
-        expect(await getStateChanges(tx1)).to.matchSnapshot()
 
         let tx2 = await call(stakingContract.connect(deployer).authorizeSignalAggregator(ethers.constants.AddressZero))
         expect(await stakingContract.signalAggregator()).to.equal(ethers.constants.AddressZero)
+
+        expect(await getStateChanges(tx1)).to.matchSnapshot()
         expect(await getStateChanges(tx2)).to.matchSnapshot()
       })
     })
@@ -1012,7 +1013,6 @@ describe("Staking", () => {
     describe("when executed by owner", () => {
       it("pausing and unpausing works", async () => {
         let tx1 = await call(stakingContract.connect(deployer).emergencyPause(true))
-        expect(await getStateChanges(tx1)).to.matchSnapshot()
         await expect(stakingContract.connect(a).transfer(b.address, 50)).to.revertedWith("JUICE is temporarily disabled")
         await expect(stakingContract.connect(a).deposit(150)).to.revertedWith("Pausable: paused")
         let tx2 = await call(stakingContract.connect(deployer).emergencyPause(false))
@@ -1020,6 +1020,8 @@ describe("Staking", () => {
           stakingContract,
           [a, b],
           [-50, 50])
+
+        expect(await getStateChanges(tx1)).to.matchSnapshot()
         expect(await getStateChanges(tx2)).to.matchSnapshot()
       })
       it("fails if pausing when already paused", async () => {
@@ -1061,10 +1063,11 @@ describe("Staking", () => {
       let amount = 100000
       let tx = await call(stakingContract.delegateDeposit(amount, await helper.signDeposit(amount, user, 0)))
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(amount)
-      expect(await getStateChanges(tx)).to.matchSnapshot()
 
       let tx2 = await call(stakingContract.delegateDeposit(amount, await helper.signDeposit(amount, user, 1)))
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(amount * 2)
+
+      expect(await getStateChanges(tx)).to.matchSnapshot()
       expect(await getStateChanges(tx2)).to.matchSnapshot()
     })
 
@@ -1072,10 +1075,11 @@ describe("Staking", () => {
       let amount = 100000
       let tx = await call(stakingContract.delegateDeposit(amount, await helper.signDeposit(amount, user, 0)))
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(amount)
-      expect(await getStateChanges(tx)).to.matchSnapshot()
 
       let tx2 = await call(stakingContract.delegateWithdraw(amount, await helper.signWithdraw(amount, user, 1)))
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(0)
+
+      expect(await getStateChanges(tx)).to.matchSnapshot()
       expect(await getStateChanges(tx2)).to.matchSnapshot()
     })
 
@@ -1083,14 +1087,15 @@ describe("Staking", () => {
       let amount = 100000
       let tx = await call(stakingContract.delegateDeposit(amount, await helper.signDeposit(amount, user, 0)))
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(amount)
-      expect(await getStateChanges(tx)).to.matchSnapshot()
 
       let tx1 = await call(stakingContract.delegateWithdraw(amount / 2, await helper.signWithdraw(amount / 2, user, 1)))
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(amount / 2)
-      expect(await getStateChanges(tx1)).to.matchSnapshot()
 
       let tx2 = await call(stakingContract.delegateWithdraw(amount / 2, await helper.signWithdraw(amount / 2, user, 2)))
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(0)
+
+      expect(await getStateChanges(tx)).to.matchSnapshot()
+      expect(await getStateChanges(tx1)).to.matchSnapshot()
       expect(await getStateChanges(tx2)).to.matchSnapshot()
     })
 
