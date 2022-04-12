@@ -82,6 +82,7 @@ const initializeJuicenet = async ([deployer, a, b, noDeposit, withDeposit]: Wall
   const DECIMALS = 10 ** 8
   const setPrice = (price: BigNumberish) => async (oracle: MockPriceOracle) => {
     await call(oracle.setPrice(price))
+    await call(oracle.setPhaseId(1))
     return oracle
   }
 
