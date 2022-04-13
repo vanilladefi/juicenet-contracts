@@ -15,6 +15,12 @@ import { EnumerableSetUpgradeable as EnumerableSet } from "@openzeppelin/contrac
 import "./interfaces/IPriceOracle.sol";
 import { StakingParam } from "./interfaces/IJuiceStakerActions.sol";
 
+// decimals synced with Chainlink pricefeed decimals
+uint8 constant DECIMALS = 8;
+
+// used in StakePosition.amount calculations to retain good enough precision in intermediate price math
+uint256 constant INTERNAL_TOKEN_AMOUNT_MULTIPLIER = 1e16;
+
 abstract contract JuiceStaking is
     IJuiceStaking,
     ERC20Upgradeable,
@@ -39,16 +45,16 @@ abstract contract JuiceStaking is
         uint256 timestamp;
     }
 
-    struct StakePosition {
+    struct StakePosition01 {
         /// The price position from Oracle when position was opened.
         OraclePosition pricePosition;
         /// The balance of Juice staked into this position. Long positions are negative, shorts are positive.
         int128 juiceBalance;
     }
 
-    struct Stake {
+    struct Stake01 {
         uint128 unstakedBalance;
-        mapping(address => StakePosition) tokenStake;
+        mapping(address => StakePosition01) tokenStake;
     }
 
     struct TokenSignal {
@@ -56,7 +62,7 @@ abstract contract JuiceStaking is
         uint128 totalShorts;
     }
 
-    mapping(address => Stake) internal stakes;
+    mapping(address => Stake01) internal stakes01;
     mapping(address => TokenSignal) internal tokenSignals;
 
     struct AggregateSignal {
@@ -79,4 +85,22 @@ abstract contract JuiceStaking is
     IJuiceSignalAggregator public signalAggregator;
 
     bytes32 public domainSeparatorV4;
+
+    // !!!
+    // JuiceStaking02 state
+    // !!!
+
+    struct StakePosition {
+        /// The amount of tokens at stake.
+        uint128 amount;
+        /// The balance of Juice staked into this position. Long positions are negative, shorts are positive.
+        int128 juiceBalance;
+    }
+
+    struct Stake {
+        uint128 unstakedBalance;
+        mapping(address => StakePosition) tokenStake;
+    }
+
+    mapping(address => Stake) internal stakes;
 }
