@@ -64,7 +64,7 @@ contract JuiceStaking02 is JuiceStaking {
 
     /// @inheritdoc IJuiceStaking
     function unstakedBalanceOf(address user) external view returns (uint256) {
-        return stakes[user].unstakedBalance;
+        return stakes02[user].unstakedBalance;
     }
 
     function latestPrice(address token)
@@ -90,7 +90,7 @@ contract JuiceStaking02 is JuiceStaking {
             bool sentiment
         )
     {
-        StakePosition memory stake = stakes[user].tokenStake[token];
+        StakePosition memory stake = stakes02[user].tokenStake[token];
         bool oracleFound;
         // if stake position was opened before price oracle was removed, their value will equal the original stake
         // oracleFound is therefore checked before calculating the juiceValue for both long and short positions
@@ -133,7 +133,7 @@ contract JuiceStaking02 is JuiceStaking {
             revert InsufficientJUICE(amount, currentBalance);
         }
 
-        stakes[depositor].unstakedBalance += uint128(amount);
+        stakes02[depositor].unstakedBalance += uint128(amount);
 
         _transfer(depositor, address(this), amount);
         emit JUICEDeposited(depositor, amount);
@@ -145,7 +145,7 @@ contract JuiceStaking02 is JuiceStaking {
     }
 
     function doWithdraw(uint256 amount, address staker) internal {
-        Stake storage stake = stakes[staker];
+        Stake storage stake = stakes02[staker];
         if (stake.unstakedBalance < amount) {
             revert InsufficientJUICE(amount, stake.unstakedBalance);
         }
@@ -214,7 +214,7 @@ contract JuiceStaking02 is JuiceStaking {
         StakingParam[] calldata stakingParams,
         address staker
     ) internal {
-        Stake storage stake = stakes[staker];
+        Stake storage stake = stakes02[staker];
         int256 juiceSupplyDiff = 0;
         int256 volumeDiff = 0;
         int256 sentimentDiff = 0;
@@ -330,7 +330,7 @@ contract JuiceStaking02 is JuiceStaking {
             revert InvalidToken(param.token);
         }
 
-        Stake storage stake = stakes[staker];
+        Stake storage stake = stakes02[staker];
         if (stake.unstakedBalance < param.amount) {
             // limit the amount to the unstaked balance
             param.amount = stake.unstakedBalance;

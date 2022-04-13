@@ -2,10 +2,9 @@
 
 pragma solidity ^0.8.10;
 
-import "../JuiceStaking.sol";
-import "../JuiceStaking01.sol";
+import "../JuiceStaking02.sol";
 
-contract MockJuiceStakingUpgrade is JuiceStaking01 {
+contract MockJuiceStakingUpgrade is JuiceStaking02 {
     uint256 public addedField;
 
     function initializeOnUpgrade(uint256 fieldValue) external onlyOwner {

@@ -82,7 +82,7 @@ contract JuiceStaking01 is JuiceStaking {
 
     /// @inheritdoc IJuiceStaking
     function unstakedBalanceOf(address user) external view returns (uint256) {
-        return stakes01[user].unstakedBalance;
+        return stakes[user].unstakedBalance;
     }
 
     function latestPrice(address token)
@@ -161,7 +161,7 @@ contract JuiceStaking01 is JuiceStaking {
             bool sentiment
         )
     {
-        StakePosition01 memory stake = stakes01[user].tokenStake[token];
+        StakePosition01 memory stake = stakes[user].tokenStake[token];
         bool oracleFound;
         IPriceOracle oracle;
         OracleAnswer memory currentAnswer;
@@ -225,7 +225,7 @@ contract JuiceStaking01 is JuiceStaking {
             revert InsufficientJUICE(amount, currentBalance);
         }
 
-        stakes01[depositor].unstakedBalance += uint128(amount);
+        stakes[depositor].unstakedBalance += uint128(amount);
 
         _transfer(depositor, address(this), amount);
         emit JUICEDeposited(depositor, amount);
@@ -237,7 +237,7 @@ contract JuiceStaking01 is JuiceStaking {
     }
 
     function doWithdraw(uint256 amount, address staker) internal {
-        Stake01 storage stake = stakes01[staker];
+        Stake01 storage stake = stakes[staker];
         if (stake.unstakedBalance < amount) {
             revert InsufficientJUICE(amount, stake.unstakedBalance);
         }
@@ -306,7 +306,7 @@ contract JuiceStaking01 is JuiceStaking {
         StakingParam[] calldata stakingParams,
         address staker
     ) internal {
-        Stake01 storage stake = stakes01[staker];
+        Stake01 storage stake = stakes[staker];
         int256 juiceSupplyDiff = 0;
         int256 volumeDiff = 0;
         int256 sentimentDiff = 0;
@@ -435,7 +435,7 @@ contract JuiceStaking01 is JuiceStaking {
             revert InvalidToken(param.token);
         }
 
-        Stake01 storage stake = stakes01[staker];
+        Stake01 storage stake = stakes[staker];
         if (stake.unstakedBalance < param.amount) {
             // limit the amount to the unstaked balance
             param.amount = stake.unstakedBalance;

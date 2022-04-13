@@ -66,8 +66,7 @@ abstract contract JuiceStaking is
         uint128 totalShorts;
     }
 
-    /// @custom:oz-renamed-from stakes
-    mapping(address => Stake01) internal stakes01;
+    mapping(address => Stake01) internal stakes;
     mapping(address => TokenSignal) internal tokenSignals;
 
     struct AggregateSignal {
@@ -107,5 +106,5 @@ abstract contract JuiceStaking is
         mapping(address => StakePosition) tokenStake;
     }
 
-    mapping(address => Stake) internal stakes;
+    mapping(address => Stake) internal stakes02;
 }
