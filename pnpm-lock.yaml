@@ -17,7 +17,7 @@ specifiers:
   '@nomiclabs/hardhat-waffle': ^2.0.3
   '@openzeppelin/contracts': 4.4.0
   '@openzeppelin/contracts-upgradeable': ^4.4.2
-  '@openzeppelin/hardhat-upgrades': ^1.14.0
+  '@openzeppelin/hardhat-upgrades': ^1.17.0
   '@typechain/ethers-v5': ^7.2.0
   '@typechain/hardhat': ^2.3.1
   '@types/chai': ^4.2.21
@@ -74,7 +74,7 @@ devDependencies:
   '@nomiclabs/hardhat-etherscan': 3.0.3_hardhat@2.8.0
   '@nomiclabs/hardhat-waffle': 2.0.3_c30f9055275ed1ca2067c2dff4e570dc
   '@openzeppelin/contracts-upgradeable': 4.4.2
-  '@openzeppelin/hardhat-upgrades': 1.14.0_513318cd31648c3937e1f2a63f688e24
+  '@openzeppelin/hardhat-upgrades': 1.17.0_513318cd31648c3937e1f2a63f688e24
   '@typechain/ethers-v5': 7.2.0_72382eba1e7a46e963013eb3e6074839
   '@typechain/hardhat': 2.3.1_hardhat@2.8.0+typechain@5.2.0
   '@types/chai': 4.3.0
@@ -1590,23 +1590,24 @@ packages:
     resolution: {integrity: sha512-dlKiZmDvJnGRLHojrDoFZJmsQVeltVeoiRN7RK+cf2FmkhASDEblE0RiaYdxPNsUZa6mRG8393b9bfyp+V5IAw==}
     dev: false
 
-  /@openzeppelin/hardhat-upgrades/1.14.0_513318cd31648c3937e1f2a63f688e24:
-    resolution: {integrity: sha512-dWLC+cgawHcZ5AbEblA3nTrBpcG9J7Z7J5UmM7qdsc/Yc97USJjXfcD6uYOQ+PhyFVBY0Ni83WGVll48d4QRWQ==}
+  /@openzeppelin/hardhat-upgrades/1.17.0_513318cd31648c3937e1f2a63f688e24:
+    resolution: {integrity: sha512-GNxR3/3fCKQsFpBi/r+5ib6U81UM9KCypmcOQxuCkVp9JKJ80/3hQdg1R+AQku/dlnhutPsfkCokH2LZFc5mNA==}
     hasBin: true
     peerDependencies:
       '@nomiclabs/hardhat-ethers': ^2.0.0
       hardhat: ^2.0.2
     dependencies:
       '@nomiclabs/hardhat-ethers': 2.0.5_ethers@5.5.2+hardhat@2.8.0
-      '@openzeppelin/upgrades-core': 1.12.0
+      '@openzeppelin/upgrades-core': 1.14.1
       chalk: 4.1.2
       hardhat: 2.8.0
+      proper-lockfile: 4.1.2
     transitivePeerDependencies:
       - supports-color
     dev: true
 
-  /@openzeppelin/upgrades-core/1.12.0:
-    resolution: {integrity: sha512-gu/ijQW+RJqGlniNkpNmiwBus3R1cuJNT0/MEJASWRFNr4Qvn0d7LZONaAkhnvlBpxdiiPenMcFIrRlwvZL4iw==}
+  /@openzeppelin/upgrades-core/1.14.1:
+    resolution: {integrity: sha512-iKlh1mbUxyfdjdEiUFyhMkqirfas+DMUu7ED53nZbHEyhcYsm+5Fl/g0Bv6bZA+a7k8kO8+22DNEKsqaDUBc2Q==}
     dependencies:
       bn.js: 5.2.0
       cbor: 8.1.0
@@ -8942,7 +8943,7 @@ packages:
   /proper-lockfile/4.1.2:
     resolution: {integrity: sha512-TjNPblN4BwAWMXU8s9AEz4JmQxnD1NNL7bNOY/AKUzyamc379FWASUhc/K1pL2noVb+XmZKLL68cjzLsiOAMaA==}
     dependencies:
-      graceful-fs: 4.2.8
+      graceful-fs: 4.2.10
       retry: 0.12.0
       signal-exit: 3.0.6
     dev: true

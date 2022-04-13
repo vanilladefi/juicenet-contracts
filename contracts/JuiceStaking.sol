@@ -62,6 +62,7 @@ abstract contract JuiceStaking is
         uint128 totalShorts;
     }
 
+    /// @custom:oz-renamed-from stakes
     mapping(address => Stake01) internal stakes01;
     mapping(address => TokenSignal) internal tokenSignals;
 
