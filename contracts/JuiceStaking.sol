@@ -29,6 +29,10 @@ abstract contract JuiceStaking is
     PausableUpgradeable,
     JuiceStakerDelegateEIP712Util
 {
+    // !!!
+    // JuiceStaking01 state
+    // !!!
+
     /// this struct is used in contract storage, so it's been optimized to fit in uint128
     struct OraclePosition {
         /// downcasted from the value range of block.timestamp, which overflows uint64 in distant enough future
