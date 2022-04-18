@@ -65,7 +65,7 @@ const getStateChanges = async ({ hash }: ContractTransaction) => {
   return lastTrace.storage
 }
 
-const call = async (ethersCall: Promise<any>) => {
+const call = async <T> (ethersCall: Promise<T>) => {
   return ethersCall.then(async (r) => {
     let latest = await ethers.provider.getBlock("latest").then(b => b.timestamp)
     let timestamp = latest + callTimeDiff - (latest % callTimeDiff)
@@ -1223,7 +1223,7 @@ describe("Staking", () => {
     })
 
     describe("when executed by owner", () => {
-      it("dum dum", async () => {
+      it("migration refunds the positions back to users", async () => {
         // deploy the first version and initialize it
         let staking01Factory = new JuiceStaking01__factory(deployer)
         let staking01Logic = await staking01Factory.deploy()
@@ -1240,20 +1240,28 @@ describe("Staking", () => {
         // execute a stake and verify the roundId error
         await staking01.connect(a).modifyStakes([{
           token: token,
-          amount: depositedAmount,
+          amount: depositedAmount / 4,
           sentiment: true,
         }])
+        expect(await staking01.unstakedBalanceOf(a.address)).to.equal(depositedAmount * 3 / 4)
         await expect(staking01.currentStake(a.address, token)).to.be.revertedWith("Array accessed at an out-of-bounds or negative index")
 
         // deploy the second version and upgrade proxy
         let staking02Factory = new MockJuiceStaking__factory(deployer)
         let staking02Logic = await call(staking02Factory.deploy())
 
-        await call(staking01Factory.attach(proxy.address).upgradeTo(staking02Logic.address))
+        let migration = staking02Logic.interface.encodeFunctionData("migrateFrom01", [[{
+          owner: a.address,
+          tokens: [token],
+        }]])
+
+        let contractTransaction = await call(staking01Factory.attach(proxy.address).upgradeToAndCall(staking02Logic.address, migration))
+        console.log(await getStateChanges(contractTransaction))
 
         let staking02 = staking02Factory.attach(proxy.address)
         let currentStake = CurrentStake(staking02)
-        expect(await currentStake(a.address, token)).to.include({ juiceStake: depositedAmount, sentiment: true })
+        expect(await staking02.unstakedBalanceOf(a.address)).to.equal(depositedAmount)
+        expect(await currentStake(a.address, token)).to.include({ juiceStake: 0 })
       })
 
       it("upgrades proxy while retaining the old state", async () => {

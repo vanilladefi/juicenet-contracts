@@ -4,6 +4,7 @@ pragma solidity ^0.8.10;
 
 import "./JuiceStaking.sol";
 import { EnumerableSetUpgradeable as EnumerableSet } from "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
+import "hardhat/console.sol";
 
 contract JuiceStaking02 is JuiceStaking {
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -549,5 +550,44 @@ contract JuiceStaking02 is JuiceStaking {
         onlyOwner
     {
         /// verify that only owner is allowed to upgrade
+    }
+
+    struct TokenPositionOwnerList {
+        address owner;
+        address[] tokens;
+    }
+
+    function migrateFrom01(TokenPositionOwnerList[] calldata list)
+        external
+        onlyOwner
+    {
+        for (uint256 i = 0; i < list.length; i++) {
+            address owner = list[i].owner;
+            Stake01 storage source = stakes[owner];
+            Stake storage target = stakes02[owner];
+            console.log(
+                "Balances",
+                uint256(target.unstakedBalance),
+                uint256(source.unstakedBalance)
+            );
+
+            target.unstakedBalance += source.unstakedBalance;
+            source.unstakedBalance = 0;
+
+            for (uint256 j = 0; j < list[i].tokens.length; j++) {
+                address token = list[i].tokens[j];
+                int128 balance = source.tokenStake[token].juiceBalance;
+                if (balance < 0) {
+                    uint128 refund = uint128(uint256(-int256(balance)));
+                    target.unstakedBalance += refund;
+                    tokenSignals[token].totalLongs -= refund;
+                } else {
+                    uint128 refund = uint128(uint256(int256(balance)));
+                    target.unstakedBalance += refund;
+                    tokenSignals[token].totalShorts -= refund;
+                }
+                delete source.tokenStake[token];
+            }
+        }
     }
 }
