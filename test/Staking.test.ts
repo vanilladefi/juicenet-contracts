@@ -74,6 +74,18 @@ const call = async (ethersCall: Promise<any>) => {
   })
 }
 
+/// helper method for more readable assertions
+type CurrentStakeHelper = (user: string, token: string) => Promise<{juiceValue: number, juiceStake: number, sentiment: boolean, currentPrice: number}>
+let CurrentStake = (stakingContract: JuiceStaking01 | JuiceStaking02): CurrentStakeHelper => async (user: string, token: string) => {
+  let { juiceValue, juiceStake, sentiment, currentPrice } = await stakingContract.currentStake(user, token)
+  return {
+    juiceValue: juiceValue.toNumber(),
+    juiceStake: juiceStake.toNumber(),
+    sentiment,
+    currentPrice: currentPrice.toNumber(),
+  }
+}
+
 let seed = 42
 const hash = createHash("sha256")
 
@@ -293,22 +305,15 @@ describe("Staking", () => {
     let oracleAddresses: string[]
     let stake: StakeHelper
     let user: Wallet, user2: Wallet
-    /// helper method for more readable assertions
-    let currentStake = async (user: string, token: string) => {
-      let { juiceValue, juiceStake, sentiment, currentPrice } = await stakingContract.currentStake(user, token)
-      return {
-        juiceValue: juiceValue.toNumber(),
-        juiceStake: juiceStake.toNumber(),
-        sentiment,
-        currentPrice: currentPrice.toNumber(),
-      }
-    }
+    let currentStake: CurrentStakeHelper
+
     beforeEach(async () => {
       ({ stakingContract, oracles, tokenWithoutPriceOracle, tokens, users: { withDeposit: user, noDeposit: user2 } } = await loadFixture(initializeJuicenet));
       ([token1, token2, token3] = tokens)
       oracleAddresses = oracles.map(x => x.address)
       stake = Stakes(token1)
       oracle = oracles[0]
+      currentStake = CurrentStake(stakingContract)
     })
     const Stakes = (token: string) => ({
       long: (amount: BigNumberish): StakingParam => ({ token, amount, sentiment: true }),
@@ -1201,6 +1206,8 @@ describe("Staking", () => {
     let stakingContract: JuiceStaking02
     let a: Wallet, b: Wallet
     let contractInfo: UpgradeableContract
+    let tokens: string[]
+    let oracles: MockPriceOracle[]
     beforeEach(async () => {
       ({
         stakingContract,
@@ -1209,11 +1216,46 @@ describe("Staking", () => {
           noDeposit: a,
           noJuice: b,
         },
+        tokens,
+        oracles,
       } = await loadFixture(initializeJuicenet))
       contractInfo = await getUpgradeableContract("JuiceStaking02")
     })
 
     describe("when executed by owner", () => {
+      it("dum dum", async () => {
+        // deploy the first version and initialize it
+        let staking01Factory = new JuiceStaking01__factory(deployer)
+        let staking01Logic = await staking01Factory.deploy()
+        let initializerData = staking01Logic.interface.encodeFunctionData("initialize")
+        let proxy = await new ERC1967Proxy__factory(deployer).deploy(staking01Logic.address, initializerData)
+        let staking01 = staking01Factory.attach(proxy.address)
+
+        let depositedAmount = INIT_JUICE_SUPPLY / 2
+        let [token] = tokens
+        await staking01.connect(deployer).mintJuice([a.address], [depositedAmount])
+        await staking01.connect(a).deposit(depositedAmount)
+        await staking01.connect(deployer).updatePriceOracles(tokens, oracles.map(x => x.address))
+
+        // execute a stake and verify the roundId error
+        await staking01.connect(a).modifyStakes([{
+          token: token,
+          amount: depositedAmount,
+          sentiment: true,
+        }])
+        await expect(staking01.currentStake(a.address, token)).to.be.revertedWith("Array accessed at an out-of-bounds or negative index")
+
+        // deploy the second version and upgrade proxy
+        let staking02Factory = new MockJuiceStaking__factory(deployer)
+        let staking02Logic = await call(staking02Factory.deploy())
+
+        await call(staking01Factory.attach(proxy.address).upgradeTo(staking02Logic.address))
+
+        let staking02 = staking02Factory.attach(proxy.address)
+        let currentStake = CurrentStake(staking02)
+        expect(await currentStake(a.address, token)).to.include({ juiceStake: depositedAmount, sentiment: true })
+      })
+
       it("upgrades proxy while retaining the old state", async () => {
         let balanceBeforeUpgrade = await stakingContract.balanceOf(a.address)
 
