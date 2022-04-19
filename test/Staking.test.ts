@@ -76,7 +76,7 @@ const call = async <T> (ethersCall: Promise<T>) => {
 
 /// helper method for more readable assertions
 type CurrentStakeHelper = (user: string, token: string) => Promise<{juiceValue: number, juiceStake: number, sentiment: boolean, currentPrice: number}>
-let CurrentStake = (stakingContract: JuiceStaking01 | JuiceStaking02): CurrentStakeHelper => async (user: string, token: string) => {
+export const CurrentStake = (stakingContract: JuiceStaking01 | JuiceStaking02): CurrentStakeHelper => async (user: string, token: string) => {
   let { juiceValue, juiceStake, sentiment, currentPrice } = await stakingContract.currentStake(user, token)
   return {
     juiceValue: juiceValue.toNumber(),
@@ -89,7 +89,7 @@ let CurrentStake = (stakingContract: JuiceStaking01 | JuiceStaking02): CurrentSt
 let seed = 42
 const hash = createHash("sha256")
 
-const createRandomEthereumAddress = () => {
+export const createRandomEthereumAddress = () => {
   hash.update(Number(seed++).toString())
   return ethers.utils.getAddress(ethers.utils.hexZeroPad("0x" + hash.copy().digest("hex").substring(0, 40), 20))
 }
@@ -1223,47 +1223,6 @@ describe("Staking", () => {
     })
 
     describe("when executed by owner", () => {
-      it("migration refunds the positions back to users", async () => {
-        // deploy the first version and initialize it
-        let staking01Factory = new JuiceStaking01__factory(deployer)
-        let staking01Logic = await staking01Factory.deploy()
-        let initializerData = staking01Logic.interface.encodeFunctionData("initialize")
-        let proxy = await new ERC1967Proxy__factory(deployer).deploy(staking01Logic.address, initializerData)
-        let staking01 = staking01Factory.attach(proxy.address)
-
-        let depositedAmount = INIT_JUICE_SUPPLY / 2
-        let [token] = tokens
-        await staking01.connect(deployer).mintJuice([a.address], [depositedAmount])
-        await staking01.connect(a).deposit(depositedAmount)
-        await staking01.connect(deployer).updatePriceOracles(tokens, oracles.map(x => x.address))
-
-        // execute a stake and verify the roundId error
-        await staking01.connect(a).modifyStakes([{
-          token: token,
-          amount: depositedAmount / 4,
-          sentiment: true,
-        }])
-        expect(await staking01.unstakedBalanceOf(a.address)).to.equal(depositedAmount * 3 / 4)
-        await expect(staking01.currentStake(a.address, token)).to.be.revertedWith("Array accessed at an out-of-bounds or negative index")
-
-        // deploy the second version and upgrade proxy
-        let staking02Factory = new MockJuiceStaking__factory(deployer)
-        let staking02Logic = await call(staking02Factory.deploy())
-
-        let migration = staking02Logic.interface.encodeFunctionData("migrateFrom01", [[{
-          owner: a.address,
-          tokens: [token],
-        }]])
-
-        let contractTransaction = await call(staking01Factory.attach(proxy.address).upgradeToAndCall(staking02Logic.address, migration))
-        console.log(await getStateChanges(contractTransaction))
-
-        let staking02 = staking02Factory.attach(proxy.address)
-        let currentStake = CurrentStake(staking02)
-        expect(await staking02.unstakedBalanceOf(a.address)).to.equal(depositedAmount)
-        expect(await currentStake(a.address, token)).to.include({ juiceStake: 0 })
-      })
-
       it("upgrades proxy while retaining the old state", async () => {
         let balanceBeforeUpgrade = await stakingContract.balanceOf(a.address)
 
