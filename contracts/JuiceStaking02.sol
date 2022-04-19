@@ -575,10 +575,12 @@ contract JuiceStaking02 is JuiceStaking {
                     uint128 refund = uint128(uint256(-int256(balance)));
                     target.unstakedBalance += refund;
                     tokenSignals[token].totalLongs -= refund;
+                    emit StakeRemoved(owner, token, true, 0, -balance);
                 } else {
                     uint128 refund = uint128(uint256(int256(balance)));
                     target.unstakedBalance += refund;
                     tokenSignals[token].totalShorts -= refund;
+                    emit StakeRemoved(owner, token, false, 0, balance);
                 }
                 delete source.tokenStake[token];
             }

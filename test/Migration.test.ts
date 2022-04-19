@@ -2,19 +2,17 @@ import { expect, use } from "chai"
 import {
   JuiceStaking01,
   JuiceStaking01__factory,
-  JuiceStaking02,
   MockJuiceStaking__factory,
-  MockPriceOracle, MockPriceOracle__factory, MockSignalAggregator__factory, MockSignatureVerifier__factory,
+  MockPriceOracle, MockPriceOracle__factory, MockSignalAggregator__factory,
 } from "../typechain/juicenet"
 import { ERC1967Proxy__factory } from "../typechain/openzeppelin"
 
 import { createRandomEthereumAddress, CurrentStake } from "./Staking.test"
 import { BigNumberish, Wallet } from "ethers"
-import { UpgradeableContract } from "@openzeppelin/upgrades-core"
 import { solidity } from "ethereum-waffle"
 import chaiAsPromised from "chai-as-promised"
 
-import { ethers, waffle, artifacts } from "hardhat"
+import { ethers, waffle } from "hardhat"
 import { ReadStakePositions01 } from "../hardhat/MigrationUtil"
 
 use(solidity)
@@ -112,9 +110,16 @@ describe("When migrating from 01 to 02", () => {
 
     let migration = staking02Logic.interface.encodeFunctionData("migrateFrom01", [openPositions])
 
-    let contractTransaction = await staking01.upgradeToAndCall(staking02Logic.address, migration)
+    let upgradeTx = staking01.upgradeToAndCall(staking02Logic.address, migration)
 
+    let tx = await upgradeTx
     let staking02 = staking02Factory.attach(staking01.address)
+
+    // verify that events are emitted, and all stakes are refunded
+    await expect(upgradeTx).to.emit(staking02, "StakeRemoved").withArgs(a.address, token, true, 0, depositedAmount / 4)
+    await expect(upgradeTx).to.emit(staking02, "StakeRemoved").withArgs(b.address, token2, false, 0, depositedAmount / 2)
+    await expect(upgradeTx).to.emit(staking02, "StakeRemoved").withArgs(c.address, token, false, 0, depositedAmount / 2)
+    await expect(upgradeTx).to.emit(staking02, "StakeRemoved").withArgs(c.address, token2, true, 0, depositedAmount / 2)
     let currentStake = CurrentStake(staking02)
     expect(await staking02.unstakedBalanceOf(a.address)).to.equal(depositedAmount)
     expect(await staking02.unstakedBalanceOf(b.address)).to.equal(depositedAmount)
