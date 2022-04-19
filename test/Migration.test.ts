@@ -84,11 +84,11 @@ describe("When migrating from 01 to 02", () => {
     await staking01.connect(c).deposit(depositedAmount)
     await staking01.connect(c).modifyStakes([{
       token: token,
-      amount: depositedAmount / 2,
+      amount: depositedAmount / 4,
       sentiment: false,
     }, {
       token: token2,
-      amount: depositedAmount / 2,
+      amount: depositedAmount * 3 / 4,
       sentiment: true,
     }])
     expect(await staking01.unstakedBalanceOf(a.address)).to.equal(depositedAmount - depositedAmount / 4)
@@ -98,6 +98,11 @@ describe("When migrating from 01 to 02", () => {
     await expect(staking01.currentStake(b.address, token2)).to.be.revertedWith("Array accessed at an out-of-bounds or negative index")
     await expect(staking01.currentStake(c.address, token)).to.be.revertedWith("Array accessed at an out-of-bounds or negative index")
     await expect(staking01.currentStake(c.address, token2)).to.be.revertedWith("Array accessed at an out-of-bounds or negative index")
+    let { longTokens: signalBefore } = await staking01.normalizedAggregateSignal()
+    expect(signalBefore.length).to.equal(1)
+    let [{ token: longToken, weight }] = signalBefore
+    expect(longToken).to.equal(token2)
+    expect(weight).to.equal(14)
 
     // deploy the second version and upgrade proxy
     let staking02Factory = new MockJuiceStaking__factory(deployer)
@@ -115,15 +120,18 @@ describe("When migrating from 01 to 02", () => {
     let tx = await upgradeTx
     let staking02 = staking02Factory.attach(staking01.address)
 
-    // verify that events are emitted, and all stakes are refunded
+    // verify that events are emitted, aggregate signal is reset, and all stakes are refunded
     await expect(upgradeTx).to.emit(staking02, "StakeRemoved").withArgs(a.address, token, true, 0, depositedAmount / 4)
     await expect(upgradeTx).to.emit(staking02, "StakeRemoved").withArgs(b.address, token2, false, 0, depositedAmount / 2)
-    await expect(upgradeTx).to.emit(staking02, "StakeRemoved").withArgs(c.address, token, false, 0, depositedAmount / 2)
-    await expect(upgradeTx).to.emit(staking02, "StakeRemoved").withArgs(c.address, token2, true, 0, depositedAmount / 2)
+    await expect(upgradeTx).to.emit(staking02, "StakeRemoved").withArgs(c.address, token, false, 0, depositedAmount / 4)
+    await expect(upgradeTx).to.emit(staking02, "StakeRemoved").withArgs(c.address, token2, true, 0, depositedAmount * 3 / 4)
     let currentStake = CurrentStake(staking02)
     expect(await staking02.unstakedBalanceOf(a.address)).to.equal(depositedAmount)
     expect(await staking02.unstakedBalanceOf(b.address)).to.equal(depositedAmount)
     expect(await staking02.unstakedBalanceOf(c.address)).to.equal(depositedAmount)
+    let { longTokens: signalAfter } = await staking02.normalizedAggregateSignal()
+    expect(signalAfter).to.eql([])
+    console.log({ signalBefore, signalAfter })
     expect(await currentStake(a.address, token)).to.include({ juiceStake: 0, juiceValue: 0 })
     expect(await currentStake(b.address, token2)).to.include({ juiceStake: 0, juiceValue: 0 })
     expect(await currentStake(c.address, token)).to.include({ juiceStake: 0, juiceValue: 0 })

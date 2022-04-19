@@ -585,5 +585,10 @@ contract JuiceStaking02 is JuiceStaking {
                 delete source.tokenStake[token];
             }
         }
+
+        AggregateSignal memory currentTotals = aggregatedSignal;
+        int256 volumeDiff = -int256(uint256(currentTotals.totalVolume));
+        int256 sentimentDiff = -int256(currentTotals.netSentiment);
+        doUpdateAggregateSignal(volumeDiff, sentimentDiff);
     }
 }
