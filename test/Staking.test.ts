@@ -5,17 +5,17 @@ import chaiAsPromised from "chai-as-promised"
 import {
   IPriceOracle__factory,
   JuiceStaking01__factory,
-  JuiceStaking02,
+  JuiceStaking02, JuiceStaking02__factory,
   MockJuiceStaking,
   MockJuiceStaking__factory,
   MockJuiceStakingUpgrade,
-  MockJuiceStakingUpgrade__factory,
+  MockJuiceStakingUpgrade__factory, MockMultisig, MockMultisig__factory,
   MockPriceOracle,
   MockPriceOracle__factory,
   MockSignalAggregator,
   MockSignalAggregator__factory,
   MockSignatureVerifier,
-  MockSignatureVerifier__factory,
+  MockSignatureVerifier__factory, SimpleForwarder__factory,
 } from "../typechain/juicenet"
 import { UpgradeableContract } from "@openzeppelin/upgrades-core"
 import { artifacts, ethers, waffle } from "hardhat"
@@ -99,6 +99,7 @@ const initializeJuicenet = async ([deployer, a, b, noDeposit, withDeposit]: Wall
 
   let signalAggregator = await call(new MockSignalAggregator__factory(deployer).deploy())
   let signatureVerifier = await call(new MockSignatureVerifier__factory(deployer).deploy())
+  let multisig = await call(new MockMultisig__factory(deployer).deploy(stakingContract.address))
 
   await call(stakingContract.connect(deployer).mintJuice([noDeposit.address, withDeposit.address], [INIT_JUICE_SUPPLY / 2, INIT_JUICE_SUPPLY / 2]))
   await call(stakingContract.connect(withDeposit).deposit(INIT_JUICE_SUPPLY / 2))
@@ -113,6 +114,7 @@ const initializeJuicenet = async ([deployer, a, b, noDeposit, withDeposit]: Wall
     tokens,
     oracles,
     signatureVerifier,
+    multisig,
   }
 }
 
@@ -1041,8 +1043,9 @@ describe("Staking", () => {
   describe("Pausing", () => {
     let stakingContract: JuiceStaking02
     let a: Wallet, b: Wallet
+    let multisig: MockMultisig
     beforeEach(async () => {
-      ({ stakingContract, deployer, users: { noDeposit: a, noJuice: b } } = await loadFixture(initializeJuicenet))
+      ({ stakingContract, deployer, users: { noDeposit: a, noJuice: b }, multisig } = await loadFixture(initializeJuicenet))
     })
 
     describe("when executed by owner", () => {
@@ -1071,7 +1074,46 @@ describe("Staking", () => {
 
     describe("when executed by non-owner", () => {
       it("fails always", async () => {
-        await expect(stakingContract.connect(a).emergencyPause(true)).to.be.revertedWith("Ownable: caller is not the owner")
+        await expect(stakingContract.connect(a).emergencyPause(true)).to.be.revertedWith("UnauthorizedPause()")
+      })
+    })
+
+    describe("when owned by multisig", () => {
+      beforeEach(async () => {
+        await stakingContract.connect(deployer).transferOwnership(multisig.address)
+        await multisig.setOwners([a.address])
+      })
+      it("pausing works for multisig owner", async () => {
+        await stakingContract.connect(a).emergencyPause(true)
+        await expect(stakingContract.connect(a).transfer(b.address, 50)).to.revertedWith("JUICE is temporarily disabled")
+        await expect(stakingContract.connect(a).deposit(150)).to.revertedWith("Pausable: paused")
+      })
+      it("unpausing fails for multisig owner", async () => {
+        await stakingContract.connect(a).emergencyPause(true)
+        await expect(stakingContract.connect(a).emergencyPause(false)).to.be.revertedWith("UnauthorizedPause()")
+      })
+
+      it("pausing works for multisig itself", async () => {
+        // works because MockMultisig just forwards the calls to the stakingContract, so msg.sender == multisig.address
+        stakingContract = stakingContract.attach(multisig.address)
+        await stakingContract.connect(a).emergencyPause(true)
+
+        await expect(stakingContract.connect(a).transfer(b.address, 50)).to.revertedWith("JUICE is temporarily disabled")
+        await expect(stakingContract.connect(a).deposit(150)).to.revertedWith("Pausable: paused")
+      })
+      it("unpausing works for multisig itself", async () => {
+        stakingContract = stakingContract.attach(multisig.address)
+        await stakingContract.connect(a).emergencyPause(true)
+        await expect(stakingContract.connect(a).emergencyPause(false)).to.not.be.reverted
+      })
+    })
+
+    describe("when owned by contract without multisig interface", () => {
+      it("pausing fails for EOA", async () => {
+        let forwarder = await new SimpleForwarder__factory(deployer).deploy(stakingContract.address)
+        await stakingContract.connect(deployer).transferOwnership(forwarder.address)
+
+        await expect(stakingContract.connect(a).emergencyPause(true)).to.be.revertedWith("UnauthorizedPause()")
       })
     })
   })

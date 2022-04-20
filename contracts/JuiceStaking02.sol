@@ -3,6 +3,7 @@
 pragma solidity ^0.8.10;
 
 import "./JuiceStaking.sol";
+import "./interfaces/IMultisig.sol";
 import { EnumerableSetUpgradeable as EnumerableSet } from "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 
 contract JuiceStaking02 is JuiceStaking {
@@ -527,11 +528,30 @@ contract JuiceStaking02 is JuiceStaking {
     }
 
     /// @inheritdoc IJuiceOwnerActions
-    function emergencyPause(bool pauseStaking) external onlyOwner {
+    function emergencyPause(bool pauseStaking) external {
         if (pauseStaking) {
-            _pause();
+            if (owner() == _msgSender() || isMultisigOwner(_msgSender())) {
+                _pause();
+                return;
+            }
         } else {
-            _unpause();
+            if (owner() == _msgSender()) {
+                _unpause();
+                return;
+            }
+        }
+        revert UnauthorizedPause();
+    }
+
+    // this function returns true if owner is a contract, implements IMultisig and sender is one of the owners
+    function isMultisigOwner(address sender) internal view returns (bool) {
+        if (!AddressUpgradeable.isContract(owner())) {
+            return false;
+        }
+        try IMultisig(owner()).isOwner(sender) returns (bool isOwner) {
+            return isOwner;
+        } catch {
+            return false;
         }
     }
 
