@@ -16,6 +16,22 @@ contract MockJuiceStaking is JuiceStaking02 {
         return registeredTokens.contains(addr);
     }
 
+    function getTokenSignal(address token)
+        public
+        view
+        returns (TokenSignal memory)
+    {
+        return tokenSignals[token];
+    }
+
+    function getInternalAggregate()
+        public
+        view
+        returns (AggregateSignal memory)
+    {
+        return aggregatedSignal;
+    }
+
     struct TokenOracleTuple {
         address token;
         address oracle;
