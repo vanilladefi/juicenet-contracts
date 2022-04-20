@@ -158,11 +158,6 @@ describe("Migration from 01 to 02", () => {
     let staking02Factory = new MockJuiceStaking__factory(deployer)
     let staking02Logic = await staking02Factory.deploy()
 
-    let stakingState = await ReadStakePositions01(staking01)
-    let openPositions = Object.entries(stakingState.accounts).map(([owner, x]) => {
-      return { owner, tokens: Object.keys(x.tokenPositions) }
-    })
-
     let migration = staking02Logic.interface.encodeFunctionData("migrateFrom01", [[{ owner: a.address, tokens: [token] }]])
 
     let upgradeTx = staking01.upgradeToAndCall(staking02Logic.address, migration)
