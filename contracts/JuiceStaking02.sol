@@ -529,13 +529,14 @@ contract JuiceStaking02 is JuiceStaking {
 
     /// @inheritdoc IJuiceOwnerActions
     function emergencyPause(bool pauseStaking) external {
+        address owner = owner();
         if (pauseStaking) {
-            if (owner() == _msgSender() || isMultisigOwner(_msgSender())) {
+            if (owner == _msgSender() || isMultisigOwner(owner, _msgSender())) {
                 _pause();
                 return;
             }
         } else {
-            if (owner() == _msgSender()) {
+            if (owner == _msgSender()) {
                 _unpause();
                 return;
             }
@@ -544,12 +545,16 @@ contract JuiceStaking02 is JuiceStaking {
     }
 
     // this function returns true if owner is a contract, implements IMultisig and sender is one of the owners
-    function isMultisigOwner(address sender) internal view returns (bool) {
-        if (!AddressUpgradeable.isContract(owner())) {
+    function isMultisigOwner(address owner, address sender)
+        internal
+        view
+        returns (bool)
+    {
+        if (!AddressUpgradeable.isContract(owner)) {
             return false;
         }
-        try IMultisig(owner()).isOwner(sender) returns (bool isOwner) {
-            return isOwner;
+        try IMultisig(owner).isOwner(sender) returns (bool isMultisigOwner) {
+            return isMultisigOwner;
         } catch {
             return false;
         }
