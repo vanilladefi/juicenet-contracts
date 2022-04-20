@@ -804,6 +804,8 @@ describe("Staking", () => {
       let tx3 = await call(stakingContract.connect(user).modifyStakes([stake.long(0)]))
       let tx4 = await call(stakingContract.connect(user2).modifyStakes([stake.short(0)]))
 
+      await expect(tx3).to.emit(stakingContract, "StakeRemoved").withArgs(user.address, token1, true, 0, user1Stake)
+      await expect(tx4).to.emit(stakingContract, "StakeRemoved").withArgs(user2.address, token1, false, 0, user2Stake)
       expect(await stakingContract.unstakedBalanceOf(user.address)).to.equal(expectedUser1Balance)
       expect(await stakingContract.unstakedBalanceOf(user2.address)).to.equal(expectedUser2Balance)
 

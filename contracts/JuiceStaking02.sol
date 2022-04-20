@@ -396,15 +396,19 @@ contract JuiceStaking02 is JuiceStaking {
                 amount: 0,
                 juiceBalance: 0
             });
-            if (currentJuiceBalance < 0) {
-                storedStakes.unstakedBalance += uint128(
-                    uint256(int256(-currentJuiceBalance))
-                );
+            uint256 refund;
+            bool sentiment = currentJuiceBalance < 0;
+            if (sentiment) {
+                refund = uint256(int256(-currentJuiceBalance));
+                storedStakes.unstakedBalance += uint128(refund);
+                tokenSignal.totalLongs -= uint128(refund);
             } else {
-                storedStakes.unstakedBalance += uint128(
-                    uint256(int256(currentJuiceBalance))
-                );
+                refund = uint256(int256(currentJuiceBalance));
+                storedStakes.unstakedBalance += uint128(refund);
+                tokenSignal.totalShorts -= uint128(refund);
             }
+            // emit the event so that off-chain subscribers can simplify their event-based accounting
+            emit StakeRemoved(staker, token, sentiment, 0, int256(refund));
             return 0;
         }
 
