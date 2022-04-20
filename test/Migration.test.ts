@@ -55,7 +55,7 @@ const initializeExternalContracts = async ([deployer, a, b, c]: Wallet[]) => {
   }
 }
 
-describe("When migrating from 01 to 02", () => {
+describe("Migration from 01 to 02", () => {
   let tokens: string[]
   let oracles: MockPriceOracle[]
   let deployer: Wallet, a: Wallet, b: Wallet, c: Wallet
@@ -66,7 +66,7 @@ describe("When migrating from 01 to 02", () => {
     ({ balancePerUser: depositedAmount, oracles, tokens, staking01, accounts: { deployer, users: [a, b, c] } } = await loadFixture(initializeExternalContracts))
   })
 
-  it("migration refunds the positions back to user", async () => {
+  it("refunds the positions back to user", async () => {
     // execute a stake and verify the roundId error
     let [token, token2] = tokens
     await staking01.connect(a).deposit(depositedAmount)
@@ -131,10 +131,42 @@ describe("When migrating from 01 to 02", () => {
     expect(await staking02.unstakedBalanceOf(c.address)).to.equal(depositedAmount)
     let { longTokens: signalAfter } = await staking02.normalizedAggregateSignal()
     expect(signalAfter).to.eql([])
-    console.log({ signalBefore, signalAfter })
     expect(await currentStake(a.address, token)).to.include({ juiceStake: 0, juiceValue: 0 })
     expect(await currentStake(b.address, token2)).to.include({ juiceStake: 0, juiceValue: 0 })
     expect(await currentStake(c.address, token)).to.include({ juiceStake: 0, juiceValue: 0 })
     expect(await currentStake(c.address, token2)).to.include({ juiceStake: 0, juiceValue: 0 })
+  })
+
+  it("fails if not all positions are migrated", async () => {
+    // execute a stake and verify the roundId error
+    let [token, token2] = tokens
+    let unmigratedPosition = { token: token2, amount: depositedAmount / 2 }
+    await staking01.connect(a).deposit(depositedAmount)
+    await staking01.connect(a).modifyStakes([{
+      token: token,
+      amount: depositedAmount / 4,
+      sentiment: true,
+    }])
+    await staking01.connect(b).deposit(depositedAmount)
+    await staking01.connect(b).modifyStakes([{
+      token: unmigratedPosition.token,
+      amount: unmigratedPosition.amount,
+      sentiment: false,
+    }])
+
+    // deploy the second version and upgrade proxy
+    let staking02Factory = new MockJuiceStaking__factory(deployer)
+    let staking02Logic = await staking02Factory.deploy()
+
+    let stakingState = await ReadStakePositions01(staking01)
+    let openPositions = Object.entries(stakingState.accounts).map(([owner, x]) => {
+      return { owner, tokens: Object.keys(x.tokenPositions) }
+    })
+
+    let migration = staking02Logic.interface.encodeFunctionData("migrateFrom01", [[{ owner: a.address, tokens: [token] }]])
+
+    let upgradeTx = staking01.upgradeToAndCall(staking02Logic.address, migration)
+
+    await expect(upgradeTx).to.be.revertedWith(`InvalidPost02MigrationState("${unmigratedPosition.token}", 0, ${unmigratedPosition.amount})`)
   })
 })

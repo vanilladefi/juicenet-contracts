@@ -585,6 +585,17 @@ contract JuiceStaking02 is JuiceStaking {
                 delete source.tokenStake[token];
             }
         }
+        for (uint256 i = 0; i < registeredTokens.length(); i++) {
+            address token = registeredTokens.at(i);
+            TokenSignal memory tokenSignal = tokenSignals[token];
+            if (tokenSignal.totalLongs > 0 || tokenSignal.totalShorts > 0) {
+                revert InvalidPost02MigrationState(
+                    token,
+                    tokenSignal.totalLongs,
+                    tokenSignal.totalShorts
+                );
+            }
+        }
 
         AggregateSignal memory currentTotals = aggregatedSignal;
         int256 volumeDiff = -int256(uint256(currentTotals.totalVolume));
