@@ -1,5 +1,5 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
-import { JuiceStaking01__factory } from "../typechain/juicenet"
+import { JuiceStaking01__factory } from "../../typechain/juicenet"
 type Arguments = { proxy: string, tx: string }
 export default async ({ proxy, tx }: Arguments, hre: HardhatRuntimeEnvironment): Promise<void> => {
   const { ethers } = hre

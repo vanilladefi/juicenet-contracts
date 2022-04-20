@@ -1,7 +1,7 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
-import { JuiceStaking01__factory } from "../typechain/juicenet"
-import { SafeLedgerSigner } from "./SignerUtil"
-import { ERC1967Proxy__factory } from "../typechain/openzeppelin"
+import { JuiceStaking01__factory } from "../../typechain/juicenet"
+import { SafeLedgerSigner } from "../SignerUtil"
+import { ERC1967Proxy__factory } from "../../typechain/openzeppelin"
 
 type Arguments = { logic: string }
 export default async ({ logic: logicAddress }: Arguments, hre: HardhatRuntimeEnvironment): Promise<void> => {
