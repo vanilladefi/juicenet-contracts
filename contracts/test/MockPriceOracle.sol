@@ -11,6 +11,9 @@ contract MockPriceOracle is IPriceOracle {
     }
 
     MockRound[] private rounds;
+    uint256 private constant PHASE_OFFSET = 64;
+    uint256 private constant PHASE_SIZE = 16;
+    uint16 private phaseId;
 
     function decimals() external pure returns (uint8) {
         return 8;
@@ -25,6 +28,19 @@ contract MockPriceOracle is IPriceOracle {
         rounds.push(MockRound({ price: newPrice, timestamp: block.timestamp }));
     }
 
+    function setPhaseId(uint16 pid) external {
+        phaseId = pid;
+    }
+
+    function decodeId(uint256 roundId)
+        internal
+        pure
+        returns (uint16 phaseId, uint64 realRoundId)
+    {
+        phaseId = uint16(roundId >> PHASE_OFFSET);
+        realRoundId = uint64(roundId);
+    }
+
     function getRoundData(uint80 roundId)
         external
         view
@@ -36,7 +52,8 @@ contract MockPriceOracle is IPriceOracle {
             uint80
         )
     {
-        MockRound memory round = rounds[roundId - 1];
+        (uint16 phaseId, uint64 rid) = decodeId(roundId);
+        MockRound memory round = rounds[rid - 1];
         return (
             roundId,
             round.price,
@@ -44,6 +61,14 @@ contract MockPriceOracle is IPriceOracle {
             round.timestamp,
             roundId
         );
+    }
+
+    function addPhase(uint16 phase, uint64 originalId)
+        internal
+        pure
+        returns (uint80)
+    {
+        return uint80((uint256(phase) << PHASE_OFFSET) | originalId);
     }
 
     function latestRoundData()
@@ -57,8 +82,8 @@ contract MockPriceOracle is IPriceOracle {
             uint80
         )
     {
-        uint80 roundId = uint80(rounds.length);
-        MockRound memory round = rounds[roundId - 1];
+        uint80 roundId = addPhase(phaseId, uint64(rounds.length));
+        MockRound memory round = rounds[rounds.length - 1];
         return (
             roundId,
             round.price,

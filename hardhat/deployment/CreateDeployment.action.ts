@@ -1,5 +1,5 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
-import { JuiceStaking__factory } from "../typechain/juicenet"
+import { JuiceStaking01__factory } from "../../typechain/juicenet"
 type Arguments = { proxy: string, tx: string }
 export default async ({ proxy, tx }: Arguments, hre: HardhatRuntimeEnvironment): Promise<void> => {
   const { ethers } = hre
@@ -10,7 +10,7 @@ export default async ({ proxy, tx }: Arguments, hre: HardhatRuntimeEnvironment):
 
   let address = proxy
   let receipt = await ethers.provider.getTransactionReceipt(tx)
-  let abi = JuiceStaking__factory.abi
+  let abi = JuiceStaking01__factory.abi
 
   await save("JuiceStaking", { abi, address, receipt })
   console.log("Saved deployment", await get("JuiceStaking"))

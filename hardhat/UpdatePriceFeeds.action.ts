@@ -1,5 +1,5 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
-import { JuiceStaking__factory } from "../typechain/juicenet"
+import { JuiceStaking01__factory } from "../typechain/juicenet"
 import { readFile } from "fs/promises"
 import { SafeLedgerSigner } from "./SignerUtil"
 import { IERC20Metadata__factory } from "../typechain/openzeppelin"
@@ -53,6 +53,6 @@ export default async (_: never, hre: HardhatRuntimeEnvironment): Promise<void> =
   console.table(tokenFeeds)
   let { address } = await get("JuiceStaking")
   let signer = await SafeLedgerSigner(ethers, network)
-  let contract = JuiceStaking__factory.connect(address, signer)
+  let contract = JuiceStaking01__factory.connect(address, signer)
   await contract.updatePriceOracles(tokenFeeds.map(t => t.token), tokenFeeds.map(t => t.feed))
 }

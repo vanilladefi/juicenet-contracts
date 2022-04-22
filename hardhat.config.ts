@@ -3,8 +3,8 @@ import hardhatConfig from "./hardhat.base"
 import { task } from "hardhat/config"
 import mintJuice from "./hardhat/MintJuice.action"
 import fetchAirdropData from "./hardhat/FetchAirdropData.action"
-import deployJuicenet from "./hardhat/DeployJuicenet.action"
-import createDeployment from "./hardhat/CreateDeployment.action"
+import deployJuicenet from "./hardhat/deployment/DeployJuicenet01.action"
+import createDeployment from "./hardhat/deployment/CreateDeployment.action"
 import updatePriceFeeds from "./hardhat/UpdatePriceFeeds.action"
 
 task("airdrop", "Mints the Juice for receivers defined in 'premine.json'", mintJuice)

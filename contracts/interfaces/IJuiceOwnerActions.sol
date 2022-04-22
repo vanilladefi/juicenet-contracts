@@ -41,4 +41,11 @@ interface IJuiceOwnerActions {
 
     /// @notice Thrown if the owner calls `mintJuice` with different sized arrays
     error MintTargetMismatch(uint256 targetLength, uint256 amountLength);
+
+    /// @notice thrown if there's a position in `token` which is not migrated
+    error InvalidPost02MigrationState(
+        address token,
+        uint256 longs,
+        uint256 shorts
+    );
 }
