@@ -13,15 +13,15 @@ export default async ({ logic: logicAddress }: Arguments, hre: HardhatRuntimeEnv
   }
   let signer = await SafeLedgerSigner(ethers, network)
   if (!logicAddress) {
-    console.log("Deploying the logic contract")
+    console.log("Deploying the 02 logic contract")
     let juiceStakingFactory = new JuiceStaking02__factory(signer)
-    console.log("Deploying logic contract")
     let stakingLogic = await juiceStakingFactory.deploy()
 
     console.log("Logic contract enqueued", stakingLogic.deployTransaction)
     console.log("Go check block scanner for real address, and re-execute this task with the address as '--logic' param")
   } else {
     let { address: proxyAddress } = await get("JuiceStaking")
+    console.log(`Upgrading the 02 proxy (${proxyAddress}) for logic contract (${logicAddress})`)
 
     let proxy = JuiceStaking01__factory.connect(proxyAddress, ethers.provider)
     let stakingState = await ReadStakePositions01(proxy)
@@ -31,6 +31,7 @@ export default async ({ logic: logicAddress }: Arguments, hre: HardhatRuntimeEnv
     console.log("Migrating open positions", openPositions)
     let staking02Logic = JuiceStaking02__factory.connect(logicAddress, ethers.provider)
     let migration = staking02Logic.interface.encodeFunctionData("migrateFrom01", [openPositions])
-    let upgradedProxy = await proxy.upgradeToAndCall(logicAddress, migration)
+    console.log("Migrated positions in encoding", migration)
+    let upgradedProxy = await proxy.connect(signer).upgradeToAndCall(logicAddress, migration)
   }
 }
