@@ -7,7 +7,7 @@ import {
 } from "../typechain/juicenet"
 import { ERC1967Proxy__factory } from "../typechain/openzeppelin"
 
-import { createRandomEthereumAddress, CurrentStake } from "./Staking.test"
+import { createRandomEthereumAddress, CurrentStake } from "./Utils"
 import { BigNumberish, Wallet } from "ethers"
 import { solidity } from "ethereum-waffle"
 import chaiAsPromised from "chai-as-promised"
@@ -26,7 +26,8 @@ const DECIMALS = 10 ** 8
 const JUICE_SUPPLY = 3 * 20 * DECIMALS
 
 const initializeExternalContracts = async ([deployer, a, b, c]: Wallet[]) => {
-  let tokens = [...Array(3)].map(createRandomEthereumAddress)
+  let addressGenerator = createRandomEthereumAddress()
+  let tokens = [...Array(3)].map(addressGenerator)
 
   const initializeOracle = (price: BigNumberish) => async (oracle: MockPriceOracle) => {
     await oracle.setPrice(price)
