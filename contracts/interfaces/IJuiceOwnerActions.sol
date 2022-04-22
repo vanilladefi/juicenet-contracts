@@ -48,4 +48,7 @@ interface IJuiceOwnerActions {
         uint256 longs,
         uint256 shorts
     );
+
+    /// @notice thrown if unauthorized msg.sender tries to pause the contracts
+    error UnauthorizedPause();
 }
