@@ -19,12 +19,16 @@ export default async (_: never, hre: HardhatRuntimeEnvironment): Promise<void> =
 
   let errors = []
   for (const tokenFeed of tokenFeeds) {
+    if (tokenFeed.feed === "0x0") {
+      tokenFeed.feed = ethers.constants.AddressZero
+      continue
+    }
     if (!ethers.utils.isAddress(tokenFeed.feed)) {
-      errors.push(`Invalid feed in tokenFeed '${tokenFeed}'`)
+      errors.push(`Invalid feed in tokenFeed '${tokenFeed.feed}'`)
       continue
     }
     if (!ethers.utils.isAddress(tokenFeed.token)) {
-      errors.push(`Invalid token in tokenFeed '${tokenFeed}'`)
+      errors.push(`Invalid token in tokenFeed '${tokenFeed.token}'`)
       continue
     }
     let metadata = IERC20Metadata__factory.connect(tokenFeed.token, ethers.provider)
