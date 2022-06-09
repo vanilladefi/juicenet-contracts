@@ -249,10 +249,11 @@ export default async ({ to }: Arguments, { ethers, network }: HardhatRuntimeEnvi
     .filter(x => ethers.utils.isAddress(x.user)) // we exclude the contract address mappings that are not known (empty strings in contracts.json)
 
   // finally, make sure that recipient get right JUICE amounts (as JUICE has 8 decimals but VNL has 12)
+  const decimalDiff = 10 ** (12 - 8)
   let finalRecipients = allRecipients
     .map(({ user, total }) => ({
       user,
-      total: total / (10n ** 4n),
+      total: BigInt(new Decimal(total.toString()).div(decimalDiff).round().toString()),
     }))
 
   await writeFile(`deployments/${to}/JUICE-airdrop.json`, JSON.stringify(finalRecipients,

@@ -27,6 +27,8 @@ export const Networks: Record<SupportedNetwork, NetworkConfig> = {
     providerURL: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_POLYGON_APIKEY}`,
     privateKeys: process.env.POLYGON_DEPLOYER_PRIVATE_KEY ? [`0x${process.env.POLYGON_DEPLOYER_PRIVATE_KEY}`] : undefined,
     hdPath: process.env.POLYGON_DEPLOYER_HDPATH,
+    gnosisTxService: "https://safe-transaction.polygon.gnosis.io",
+    multisigAddress: process.env.POLYGON_DEPLOYER_ADDRESS,
   },
   mumbai: {
     providerURL: `https://polygon-mumbai.g.alchemy.com/v2/${process.env.ALCHEMY_MUMBAI_APIKEY}`,

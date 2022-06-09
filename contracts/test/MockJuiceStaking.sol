@@ -3,9 +3,9 @@
 pragma solidity ^0.8.10;
 
 import "../interfaces/IPriceOracle.sol";
-import "../JuiceStaking.sol";
+import "../JuiceStaking02.sol";
 
-contract MockJuiceStaking is JuiceStaking {
+contract MockJuiceStaking is JuiceStaking02 {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     function getPriceOracle(address addr) public view returns (IPriceOracle) {
@@ -14,6 +14,22 @@ contract MockJuiceStaking is JuiceStaking {
 
     function hasRegisteredToken(address addr) public view returns (bool) {
         return registeredTokens.contains(addr);
+    }
+
+    function getTokenSignal(address token)
+        public
+        view
+        returns (TokenSignal memory)
+    {
+        return tokenSignals[token];
+    }
+
+    function getInternalAggregate()
+        public
+        view
+        returns (AggregateSignal memory)
+    {
+        return aggregatedSignal;
     }
 
     struct TokenOracleTuple {
